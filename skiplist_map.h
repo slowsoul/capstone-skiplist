@@ -30,25 +30,35 @@
 
 #endif
 
-#define SL_MAX(a, b)          ((a) < (b) ? (b) : (a))
+#define SL_MAX(a, b)         ((a) < (b) ? (b) : (a))
 
 namespace cmu {
 
-template <typename _Key, typename _Data, int _Pagesize>
+template <typename _Key, typename _Data>
 class skiplist_default_map_traits
 {
 public:
-    //static const int order = SL_MAX(8, _Pagesize / (sizeof(_Key) + sizeof(_Data)));
-    static const int order = 33; // NOTE order should be at least 8
+    static const int pagesize = 512;
+    static const short order = SL_MAX(8, pagesize / (sizeof(_Key) + sizeof(void *)));
+    static const short leaf_order = SL_MAX(8, pagesize / (sizeof(_Key) + sizeof(_Data)));
 };
+
+// forward declaration of friend class
+template <typename _Key, typename _Data,
+          typename _Compare,
+          typename _Traits,
+          bool _Duplicates,
+          typename _Alloc>
+class skiplist_map_compact;
 
 template <typename _Key, typename _Data,
           typename _Compare = std::less<_Key>,
-          typename _Traits = skiplist_default_map_traits<_Key, _Data, 512>,
+          typename _Traits = skiplist_default_map_traits<_Key, _Data>,
           bool _Duplicates = false,
           typename _Alloc = std::allocator<std::pair<_Key, _Data>>>
 class skiplist_map
 {
+#define SL_FRIENDS friend class skiplist_map_compact<_Key, _Data, _Compare, _Traits, _Duplicates, _Alloc>;
 public:
     typedef _Key key_type;
     typedef _Data data_type;
@@ -56,6 +66,7 @@ public:
     typedef _Traits traits;
     static const bool allow_duplicates = _Duplicates;
     typedef _Alloc allocator_type;
+    SL_FRIENDS
 
 public:
     typedef skiplist_map<key_type, data_type, key_compare, traits,
@@ -65,32 +76,33 @@ public:
     typedef size_t size_type;
 
 public:
-    static const short c_order = traits::order;
-    static const short c_min_count = (c_order % 2 == 0) ? (c_order / 2 - 1) : (c_order / 2);
-    static const short c_split_left_count = (c_order % 2 == 0) ? (c_order / 2) : (c_order / 2 + 1);
-    static const short c_split_right_count = c_order / 2;
+    static const short i_order = traits::order;
+    static const short i_half_order = (i_order % 2 == 0) ? (i_order / 2) : (i_order / 2 + 1);
+
+    static const short l_order = traits::leaf_order;
+    static const short l_half_order = (l_order % 2 == 0) ? (l_order / 2) : (l_order / 2 + 1);
 
 private:
     struct node {
         short is_leaf;
         short count;
-
-        key_type key[c_order];
     };
 
     struct inner_node: public node {
         typedef typename _Alloc::template rebind<inner_node>::other alloc_type;
 
+        key_type   key[i_order];
+        node       *down[i_order];
         inner_node *right;
-        node     *down[c_order];
     };
 
     struct leaf_node: public node {
         typedef typename _Alloc::template rebind<leaf_node>::other alloc_type;
 
-        leaf_node *right;
-        data_type data[c_order];
         leaf_node *left;
+        leaf_node *right;
+        key_type  key[l_order];
+        data_type data[l_order];
     };
 
 public:
@@ -124,6 +136,7 @@ public:
                                   allow_duplicates, allocator_type>;
 
         mutable value_type temp_value;
+        SL_FRIENDS
 
     public:
         inline iterator()
@@ -249,6 +262,7 @@ public:
         friend class const_reverse_iterator;
 
         mutable value_type temp_value;
+        SL_FRIENDS
 
     public:
         inline const_iterator()
@@ -340,7 +354,7 @@ public:
 
         inline const_iterator operator -- (int)
         {
-            const_iterator tmp = *this;   // copy ourselves
+            const_iterator tmp = *this;
 
             if (currindex > 0) {
                 --currindex;
@@ -389,6 +403,7 @@ public:
                                   allow_duplicates, allocator_type>;
 
         mutable value_type temp_value;
+        SL_FRIENDS
 
     public:
         inline reverse_iterator()
@@ -431,12 +446,15 @@ public:
 
         inline reverse_iterator& operator ++ ()
         {
-            if (currindex > 0) {
+            if (currindex > 1) {
                 --currindex;
             }
             else if (currnode->left != NULL) {
                 currnode = currnode->left;
                 currindex = currnode->count;
+            }
+            else {
+                currindex = 0;
             }
             return *this;
         }
@@ -445,12 +463,15 @@ public:
         {
             reverse_iterator tmp = *this;
 
-            if (currindex > 0) {
+            if (currindex > 1) {
                 --currindex;
             }
             else if (currnode->left != NULL) {
                 currnode = currnode->left;
                 currindex = currnode->count;
+            }
+            else {
+                currindex = 0;
             }
             return tmp;
         }
@@ -459,12 +480,12 @@ public:
         {
             if (currnode->right != NULL) {
                 currindex++;
-                if (currindex == currnode->count) {
+                if (currindex == currnode->count + 1) {
                     currnode = currnode->right;
                     currindex = 1;
                 }
             }
-            else if (currindex < currnode->count - 1) {
+            else if (currindex < currnode->count) {
                 currindex++;
             }
             return *this;
@@ -476,12 +497,12 @@ public:
 
             if (currnode->right != NULL) {
                 currindex++;
-                if (currindex == currnode->count) {
+                if (currindex == currnode->count + 1) {
                     currnode = currnode->right;
                     currindex = 1;
                 }
             }
-            else if (currindex < currnode->count - 1) {
+            else if (currindex < currnode->count) {
                 currindex++;
             }
             return tmp;
@@ -521,6 +542,7 @@ public:
                                   allow_duplicates, allocator_type>;
 
         mutable value_type temp_value;
+        SL_FRIENDS
 
     public:
         inline const_reverse_iterator()
@@ -571,12 +593,15 @@ public:
 
         inline const_reverse_iterator& operator ++ ()
         {
-            if (currindex > 0) {
+            if (currindex > 1) {
                 --currindex;
             }
             else if (currnode->left != NULL) {
                 currnode = currnode->left;
                 currindex = currnode->count;
+            }
+            else {
+                currindex = 0;
             }
             return *this;
         }
@@ -585,12 +610,15 @@ public:
         {
             const_reverse_iterator tmp = *this;
 
-            if (currindex > 0) {
+            if (currindex > 1) {
                 --currindex;
             }
             else if (currnode->left != NULL) {
                 currnode = currnode->left;
                 currindex = currnode->count;
+            }
+            else {
+                currindex = 0;
             }
             return tmp;
         }
@@ -599,12 +627,12 @@ public:
         {
             if (currnode->right != NULL) {
                 currindex++;
-                if (currindex == currnode->count) {
+                if (currindex == currnode->count + 1) {
                     currnode = currnode->right;
                     currindex = 1;
                 }
             }
-            else if (currindex < currnode->count - 1) {
+            else if (currindex < currnode->count) {
                 currindex++;
             }
             return *this;
@@ -616,12 +644,12 @@ public:
 
             if (currnode->right != NULL) {
                 currindex++;
-                if (currindex == currnode->count) {
+                if (currindex == currnode->count + 1) {
                     currnode = currnode->right;
                     currindex = 1;
                 }
             }
-            else if (currindex < currnode->count - 1) {
+            else if (currindex < currnode->count) {
                 currindex++;
             }
             return tmp;
@@ -671,9 +699,9 @@ public:
         m_inner_count = m_leaf_count = 0;
 
         m_head = m_head_leaf = m_tail_leaf = allocate_leaf();
-        m_head->count = 1; // placeholder for virtual max key
-        m_head->key[0] = key_type(); // placeholder for virtual max key
-        m_head_leaf->left = m_head_leaf->right = NULL;
+        leaf_node *l_head = static_cast<leaf_node *>(m_head);
+        l_head->count = 1; // placeholder for virtual max key
+        l_head->key[0] = key_type(); // placeholder for virtual max key
     }
 
     explicit inline skiplist_map(const key_compare& kcf,
@@ -687,15 +715,14 @@ public:
         m_inner_count = m_leaf_count = 0;
 
         m_head = m_head_leaf = m_tail_leaf = allocate_leaf();
-        m_head->count = 1; // placeholder for virtual max key
-        m_head->key[0] = key_type(); // placeholder for virtual max key
-        m_head_leaf->left = NULL;
-        m_head_leaf->left = m_head_leaf->right = NULL;
+        leaf_node *l_head = static_cast<leaf_node *>(m_head);
+        l_head->count = 1; // placeholder for virtual max key
+        l_head->key[0] = key_type(); // placeholder for virtual max key
     }
 
     inline ~skiplist_map()
     {
-        clear();
+        clear_all();
     }
 
     void swap(self_type &from)
@@ -722,7 +749,7 @@ public:
             : key_comp(kc)
         { }
 
-        /// Friendly to the btree class so it may call the constructor
+        /// Friendly to the skip list class so it may call the constructor
         friend class skiplist_map<key_type, data_type, key_compare, traits,
                                   allow_duplicates, allocator_type>;
 
@@ -817,8 +844,8 @@ private:
         }
     }
 
-public:
-    void clear()
+    // free all allocated memory, only used in destructor
+    void clear_all()
     {
         if (m_head == NULL) {
             return;
@@ -845,6 +872,51 @@ public:
         }
         m_head = m_head_leaf = m_tail_leaf = NULL;
         m_size = m_level = 0;
+    }
+
+public:
+    // clear all nodes except the starting leaf node for empty skip list
+    void clear()
+    {
+        if (m_head != NULL) {
+            node *head = m_head, *next;
+            while (!head->is_leaf) {
+                inner_node *in = static_cast<inner_node*>(head);
+                next = in->down[0];
+
+                while (in != NULL) {
+                    inner_node *tmp = in->right;
+                    free_node(in);
+                    in = tmp;
+                }
+
+                head = next;
+            }
+
+            leaf_node *ln = static_cast<leaf_node *>(head);
+            leaf_node *first_leaf = ln;
+            ln = ln->right;
+            while (ln != NULL) {
+                leaf_node *tmp = ln->right;
+                free_node(ln);
+                ln = tmp;
+            }
+
+            // reset the only leaf node left to be the root node
+            first_leaf->count = 1;
+            first_leaf->key[0] = key_type();
+            first_leaf->left = first_leaf->right = NULL;
+            m_head = m_head_leaf = m_tail_leaf = first_leaf;
+        }
+        else {
+            m_head = m_head_leaf = m_tail_leaf = allocate_leaf();
+            leaf_node *l_head = static_cast<leaf_node *>(m_head);
+            l_head->count = 1; // placeholder for virtual max key
+            l_head->key[0] = key_type(); // placeholder for virtual max key
+        }
+
+        m_size = m_level = 0;
+        m_inner_count = m_leaf_count = 0;
     }
 
 public:
@@ -1232,8 +1304,8 @@ private:
             leaf_node *l = static_cast<leaf_node *>(node);
             leaf_node *r = allocate_leaf();
 
-            l->count = c_split_left_count;
-            r->count = c_split_right_count;
+            l->count = l_half_order;
+            r->count = l_order - l_half_order;
             r->right = l->right;
             l->right = r;
             r->left = l;
@@ -1242,9 +1314,9 @@ private:
                 m_tail_leaf = r;
             }
 
-            for (short i = c_order - 1; i >= c_split_left_count; i--) {
-                r->key[i - c_split_left_count] = l->key[i];
-                r->data[i - c_split_left_count] = l->data[i];
+            for (short i = l_order - 1; i >= l_half_order; i--) {
+                r->key[i - l_half_order] = l->key[i];
+                r->data[i - l_half_order] = l->data[i];
             }
 
             return r;
@@ -1253,14 +1325,14 @@ private:
             inner_node *l = static_cast<inner_node *>(node);
             inner_node *r = allocate_inner();
 
-            l->count = c_split_left_count;
-            r->count = c_split_right_count;
+            l->count = i_half_order;
+            r->count = i_order - i_half_order;
             r->right = l->right;
             l->right = r;
 
-            for (short i = c_order - 1; i >= c_split_left_count; i--) {
-                r->key[i - c_split_left_count] = l->key[i];
-                r->down[i - c_split_left_count] = l->down[i];
+            for (short i = i_order - 1; i >= i_half_order; i--) {
+                r->key[i - i_half_order] = l->key[i];
+                r->down[i - i_half_order] = l->down[i];
             }
 
             return r;
@@ -1323,7 +1395,7 @@ private:
             }
 
             for (j = 0; i < rc; i += 1, j += 1) {
-            	r->key[j] = r->key[i];
+                r->key[j] = r->key[i];
                 r->data[j] = r->data[i];
             }
         }
@@ -1338,7 +1410,7 @@ private:
             }
 
             for (j = 0; i < rc; i++, j++) {
-            	r->key[j] = r->key[i];
+                r->key[j] = r->key[i];
                 r->down[j] = r->down[i];
             }
         }
@@ -1364,7 +1436,7 @@ private:
             }
 
             for (i = lc - move, j = 0; i < lc; i++, j++) {
-            	r->key[j] = l->key[i];
+                r->key[j] = l->key[i];
                 r->data[j] = l->data[i];
             }
         }
@@ -1379,7 +1451,7 @@ private:
             }
 
             for (i = lc - move, j = 0; i < lc; i++, j++) {
-            	r->key[j] = l->key[i];
+                r->key[j] = l->key[i];
                 r->down[j] = l->down[i];
             }
         }
@@ -1403,10 +1475,15 @@ private:
             }
 
             node *child = in->down[i];
-            if (child->count == c_order) {
+            if (child->count == ((child->is_leaf) ? l_order : i_order)) {
                 node *new_child = split_node(child);
                 inner_shift_right(in, i);
-                in->key[i] = child->key[c_split_left_count-1];
+                if (child->is_leaf) {
+                    in->key[i] = (static_cast<leaf_node *>(child))->key[l_half_order-1];
+                }
+                else {
+                    in->key[i] = (static_cast<inner_node *>(child))->key[i_half_order-1];
+                }
                 in->down[i] = child;
                 in->down[i+1] = new_child;
 
@@ -1446,7 +1523,7 @@ private:
         ln->data[i] = data;
 
         // check if m_head needs to be split
-        if (m_head->count == c_order) {
+        if (m_head->count == ((m_head->is_leaf) ? l_order : i_order)) {
             node *child = m_head;
             node *new_child = split_node(child);
 
@@ -1454,10 +1531,15 @@ private:
             inner_node *head = static_cast<inner_node *>(m_head);
             m_level++;
             head->count = 2;
-            head->right = NULL;
 
-            head->key[0] = child->key[child->count - 1];
-            head->key[1] = new_child->key[new_child->count - 1];
+            if (child->is_leaf) {
+                head->key[0] = (static_cast<leaf_node *>(child))->key[l_half_order - 1];
+                head->key[1] = (static_cast<leaf_node *>(new_child))->key[l_order - l_half_order - 1];
+            }
+            else {
+                head->key[0] = (static_cast<inner_node *>(child))->key[i_half_order - 1];
+                head->key[1] = (static_cast<inner_node *>(new_child))->key[i_order - i_half_order - 1];
+            }
             head->down[0] = child;
             head->down[1] = new_child;
         }
@@ -1483,29 +1565,40 @@ public:
             }
 
             node *child = in->down[i];
-            if (child->count == c_min_count) {
+            if (child->count < ((child->is_leaf) ? l_half_order : i_half_order)) {
                 if (i == 0) {
                     node *rchild = in->down[i+1];
-                    if (rchild->count == c_min_count) {
+                    if (rchild->count <= ((child->is_leaf) ? l_half_order : i_half_order)) {
                         inner_shift_left(in, i);
                         concat_node(child, rchild);
                         in->down[i] = child;
                     }
                     else {
                         redistribute_right_left(child, rchild);
-                        in->key[i] = child->key[child->count - 1];
+                        if (child->is_leaf) {
+                            in->key[i] = (static_cast<leaf_node *>(child))->key[child->count - 1];
+                        }
+                        else {
+                            in->key[i] = (static_cast<inner_node *>(child))->key[child->count - 1];
+                        }
                     }
                 }
                 else {
                     node *lchild = in->down[i-1];
-                    if (lchild->count == c_min_count) {
+                    if (lchild->count <= ((child->is_leaf) ? l_half_order : i_half_order)) {
                         inner_shift_left(in, i-1);
                         concat_node(lchild, child);
                         in->down[i-1] = lchild;
+                        child = lchild;
                     }
                     else {
                         redistribute_left_right(lchild, child);
-                        in->key[i-1] = lchild->key[lchild->count - 1];
+                        if (lchild->is_leaf) {
+                            in->key[i-1] = (static_cast<leaf_node *>(lchild))->key[lchild->count - 1];
+                        }
+                        else {
+                            in->key[i-1] = (static_cast<inner_node *>(lchild))->key[lchild->count - 1];
+                        }
                     }
                 }
             }
@@ -1563,7 +1656,21 @@ public:
         if (NULL == iter.currnode ||
             (iter.currnode)->is_leaf == 0 ||
             iter == end() ||
+            iter.currindex < 0 ||
             iter.currindex >= (iter.currnode)->count) {
+            return;
+        }
+
+        erase_one(iter.key());
+    }
+
+    void erase(reverse_iterator iter)
+    {
+        if (NULL == iter.currnode ||
+            (iter.currnode)->is_leaf == 0 ||
+            iter == rend() ||
+            iter.currindex <= 0 ||
+            iter.currindex > (iter.currnode)->count) {
             return;
         }
 
@@ -1579,6 +1686,8 @@ public:
     {
         os << "Level: " << m_level << std::endl;
         os << "Size: " << m_size << std::endl;
+        os << "Inner order: " << i_order << std::endl;
+        os << "Leaf order: " << l_order << std::endl;
 
         node *level_head = m_head;
         if (level_head == NULL) {
