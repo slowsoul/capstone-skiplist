@@ -10,13 +10,13 @@ namespace cmu {
 class bloomfilter {
 private:
     bool little_endian;
-    int bits_per_key;
-    int k;
+    size_t bits_per_key;
+    size_t k;
 
-    int bits;
+    size_t bits;
     char *array;
 
-    inline uint32_t decode_fixed_32(const char *ptr)
+    inline uint32_t decode_fixed_32(const char *ptr) const
     {
         if (little_endian) {
             // Load the raw bytes
@@ -31,7 +31,7 @@ private:
         }
     }
 
-    uint32_t hash(const char *data, size_t n, uint32_t seed)
+    uint32_t hash(const char *data, size_t n, uint32_t seed) const
     {
         // Similar to murmur hash
         const uint32_t m = 0xc6a4a793;
@@ -65,14 +65,14 @@ private:
         return h;
     }
 
-    uint32_t bloom_hash(const char *data, size_t n)
+    uint32_t bloom_hash(const char *data, size_t n) const
     {
         return hash(data, n, 0xbc9f1d34);
     }
 
 public:
     explicit inline bloomfilter(bool little_endian, int k, int bits_per_key)
-        : little_endian(little_endian), k(k), bits_per_key(bits_per_key), array(NULL)
+        : little_endian(little_endian), k(k), bits_per_key(bits_per_key), bits(0), array(NULL)
     { }
 
     inline ~bloomfilter()
@@ -90,10 +90,15 @@ public:
             array = NULL;
         }
 
-        int bytes = (key_count * bits_per_key + 7) / 8;
+        size_t bytes = (key_count * bits_per_key + 7) / 8;
         bits = bytes * 8;
         array = (char *)malloc(bytes);
         memset(array, 0, bytes);
+    }
+
+    size_t size()
+    {
+        return bits / 8;
     }
 
     void insert(const char *data, size_t n)
@@ -107,7 +112,7 @@ public:
         }
     }
 
-    bool key_may_match(const char *data, size_t n)
+    bool key_may_match(const char *data, size_t n) const
     {
         uint32_t h = bloom_hash(data, n);
         const uint32_t delta = (h >> 17) | (h << 15);

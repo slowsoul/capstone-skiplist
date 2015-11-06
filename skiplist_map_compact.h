@@ -8,30 +8,17 @@
 #include <memory>
 #include <cstddef>
 #include <cassert>
+#include "bloomfilter.h"
 #include "skiplist_map.h"
 
-#ifdef SL_DEBUG
+#define SL_MERGE 0
+#define SL_MERGE_THRESHOLD 100
+#define SL_MERGE_RATIO 10
 
-#include <iostream>
-#include <iomanip>
-
-/// Print out debug information to std::cout if BTREE_DEBUG is defined.
-#define SL_PRINT(x)          do { if (debug) (std::cout << x << std::endl); } while (0)
-
-/// Assertion only if BTREE_DEBUG is defined. This is not used in verify().
-#define SL_ASSERT(x)         do { assert(x); } while (0)
-
-#else
-
-/// Print out debug information to std::cout if BTREE_DEBUG is defined.
-#define SL_PRINT(x)          do { } while (0)
-
-/// Assertion only if BTREE_DEBUG is defined. This is not used in verify().
-#define SL_ASSERT(x)         do { } while (0)
-
-#endif
-
-#define SL_MAX(a, b)         ((a) < (b) ? (b) : (a))
+#define USE_BLOOM_FILTER 1
+#define LITTLEENDIAN 1
+#define BITS_PER_KEY 8
+#define K 2
 
 namespace cmu {
 
@@ -91,9 +78,94 @@ public:
 
         mutable value_type temp_value;
 
+        bool isBegin(typename sl_type::iterator it) {
+            typename sl_type::iterator tmp_iter = it--;
+            return tmp_iter == it;
+        }
+
         bool isEnd(typename sl_type::iterator it) {
             typename sl_type::iterator tmp_iter = it++;
             return tmp_iter == it;
+        }
+
+        void moveBackward()
+        {
+            // initial state
+            if (isEnd(d_iter) && isEnd(s_iter)) {
+                if (isBegin(d_iter) && !isBegin(s_iter)) {
+                    in_dyna = false;
+                    do {
+                        --s_iter;
+                    } while (!isBegin(s_iter) && s_iter.data() == (data_type)0);
+                }
+                else if (!isBegin(d_iter) && isBegin(s_iter)) {
+                    in_dyna = true;
+                    --d_iter;
+                }
+                else if (!isBegin(d_iter) && !isBegin(s_iter)) {
+                    --d_iter;
+                    --s_iter;
+                    if (!key_less(d_iter.key(), s_iter.key()) &&
+                        !key_less(s_iter.key(), d_iter.key()))
+                    {
+                        --s_iter;
+                    }
+                    while (!isBegin(s_iter) && s_iter.data() == (data_type)0) {
+                        --s_iter;
+                    }
+                    in_dyna = !key_less(d_iter.key(), s_iter.key());
+                }
+            }
+            else {
+                //SL_PRINT((in_dyna ? "d" : "s") << " " << d_iter.key() << " " << s_iter.key());
+                if (in_dyna) {
+                    --d_iter;
+                    if (!isEnd(s_iter) &&
+                        !key_less(d_iter.key(), s_iter.key()) &&
+                        !key_less(s_iter.key(), d_iter.key()))
+                    {
+                        --s_iter;
+                    }
+                    while (!isBegin(s_iter) && s_iter.data() == (data_type)0) {
+                        --s_iter;
+                    }
+                }
+                else {
+                    do {
+                        --s_iter;
+                    } while (!isBegin(s_iter) && s_iter.data() == (data_type)0);
+                }
+                in_dyna = !key_less(d_iter.key(), s_iter.key());
+                if (isBegin(d_iter) && isBegin(s_iter)) {
+                    in_dyna = !in_dyna;
+                }
+            }
+        }
+
+        void moveForward()
+        {
+            //SL_PRINT((in_dyna ? "d" : "s") << " " << d_iter.key() << " " << s_iter.key());
+            if (in_dyna) {
+                ++d_iter;
+                if (!isEnd(d_iter) && !isEnd(s_iter) &&
+                    !key_less(d_iter.key(), s_iter.key()) &&
+                    !key_less(s_iter.key(), d_iter.key()))
+                {
+                    ++s_iter;
+                }
+                while (!isEnd(s_iter) && s_iter.data() == (data_type)0) {
+                    ++s_iter;
+                }
+            }
+            else {
+                do {
+                    ++s_iter;
+                } while (!isEnd(s_iter) && s_iter.data() == (data_type)0);
+            }
+            in_dyna = isEnd(s_iter);
+            if (!in_dyna && !isEnd(d_iter)) {
+                in_dyna = !key_less(s_iter.key(), d_iter.key());
+            }
         }
 
     public:
@@ -135,18 +207,7 @@ public:
 
         inline iterator& operator ++ ()
         {
-            if (in_dyna) {
-                ++d_iter;
-            }
-            else {
-                do {
-                    ++s_iter;
-                } while (!isEnd(s_iter) && s_iter.data() == (data_type)0);
-            }
-            in_dyna = isEnd(s_iter);
-            if (!in_dyna && !isEnd(d_iter)) {
-                in_dyna = !key_less(s_iter.key(), d_iter.key());
-            }
+            moveForward();
             return *this;
         }
 
@@ -154,24 +215,13 @@ public:
         {
             iterator tmp = *this;
 
-            if (in_dyna) {
-                ++d_iter;
-            }
-            else {
-                do {
-                    ++s_iter;
-                } while (!isEnd(s_iter) && s_iter.data() == (data_type)0);
-            }
-            in_dyna = isEnd(s_iter);
-            if (!in_dyna && !isEnd(d_iter)) {
-                in_dyna = !key_less(s_iter.key(), d_iter.key());
-            }
+            moveForward();
             return tmp;
         }
 
         inline iterator& operator -- ()
         {
-            // TODO
+            moveBackward();
             return *this;
         }
 
@@ -179,7 +229,7 @@ public:
         {
             iterator tmp = *this;
 
-            // TODO
+            moveBackward();
             return tmp;
         }
 
@@ -218,9 +268,114 @@ public:
 
         mutable value_type temp_value;
 
+        bool isBegin(typename sl_type::const_iterator it) {
+            typename sl_type::const_iterator tmp_iter = it--;
+            return tmp_iter == it;
+        }
+
         bool isEnd(typename sl_type::const_iterator it) {
             typename sl_type::const_iterator tmp_iter = it++;
             return tmp_iter == it;
+        }
+
+        void moveBackward()
+        {
+            // initial state
+            if (isEnd(d_iter) && isEnd(s_iter)) {
+                if (isBegin(d_iter) && !isBegin(s_iter)) {
+                    in_dyna = false;
+                    do {
+                        --s_iter;
+                    } while (!isBegin(s_iter) && s_iter.data() == (data_type)0);
+                }
+                else if (!isBegin(d_iter) && isBegin(s_iter)) {
+                    in_dyna = true;
+                    --d_iter;
+                }
+                else if (!isBegin(d_iter) && !isBegin(s_iter)) {
+                    --d_iter;
+                    --s_iter;
+                    if (!key_less(d_iter.key(), s_iter.key()) &&
+                        !key_less(s_iter.key(), d_iter.key()))
+                    {
+                        --s_iter;
+                    }
+                    while (!isBegin(s_iter) && s_iter.data() == (data_type)0) {
+                        --s_iter;
+                    }
+                    in_dyna = !key_less(d_iter.key(), s_iter.key());
+                }
+            }
+            else {
+                SL_PRINT((in_dyna ? "d" : "s") << " " << d_iter.key() << " " << s_iter.key());
+                bool static_empty = false;
+                if (in_dyna) {
+                    --d_iter;
+                    if (!isEnd(s_iter) &&
+                        !key_less(d_iter.key(), s_iter.key()) &&
+                        !key_less(s_iter.key(), d_iter.key()))
+                    {
+                        --s_iter;
+                    }
+                    while (!isBegin(s_iter) && s_iter.data() == (data_type)0) {
+                        --s_iter;
+                    }
+                    typename sl_type::const_iterator tmp(s_iter);
+                    do {
+                        --s_iter;
+                    } while (!isBegin(s_iter) && s_iter.data() == (data_type)0);
+                    if (isBegin(s_iter) && s_iter.data() == (data_type)0) {
+                        static_empty = true;
+                    }
+                    s_iter.currnode = tmp.currnode;
+                    s_iter.currindex = tmp.currindex;
+                }
+                else {
+                    typename sl_type::const_iterator tmp(s_iter);
+                    do {
+                        --s_iter;
+                    } while (!isBegin(s_iter) && s_iter.data() == (data_type)0);
+                    if (isBegin(s_iter) && s_iter.data() == (data_type)0) {
+                        s_iter.currnode = tmp.currnode;
+                        s_iter.currindex = tmp.currindex;
+                        static_empty = true;
+                    }
+                }
+                in_dyna = isEnd(s_iter);
+                if (!in_dyna && !isEnd(d_iter)) {
+                    in_dyna = static_empty ||
+                              !key_less(d_iter.key(), s_iter.key());
+                    if (isBegin(d_iter) && isBegin(s_iter)) {
+                        in_dyna = !in_dyna;
+                    }
+                }
+            }
+        }
+
+        void moveForward()
+        {
+            //SL_PRINT((in_dyna ? "sd" : "ss") << " " << d_iter.key() << " " << s_iter.key());
+            if (in_dyna) {
+                ++d_iter;
+                if (!isEnd(d_iter) && !isEnd(s_iter) &&
+                    !key_less(d_iter.key(), s_iter.key()) &&
+                    !key_less(s_iter.key(), d_iter.key()))
+                {
+                    ++s_iter;
+                }
+                while (!isEnd(s_iter) && s_iter.data() == (data_type)0) {
+                    ++s_iter;
+                }
+            }
+            else {
+                do {
+                    ++s_iter;
+                } while (!isEnd(s_iter) && s_iter.data() == (data_type)0);
+            }
+            in_dyna = isEnd(s_iter);
+            if (!in_dyna && !isEnd(d_iter)) {
+                in_dyna = !key_less(s_iter.key(), d_iter.key());
+            }
         }
 
     public:
@@ -270,18 +425,7 @@ public:
 
         inline const_iterator& operator ++ ()
         {
-            if (in_dyna) {
-                ++d_iter;
-            }
-            else {
-                do {
-                    ++s_iter;
-                } while (!isEnd(s_iter) && s_iter.data() == (data_type)0);
-            }
-            in_dyna = isEnd(s_iter);
-            if (!in_dyna && !isEnd(d_iter)) {
-                in_dyna = !key_less(s_iter.key(), d_iter.key());
-            }
+            moveForward();
             return *this;
         }
 
@@ -289,25 +433,13 @@ public:
         {
             const_iterator tmp = *this;
 
-            if (in_dyna) {
-                ++d_iter;
-            }
-            else {
-                do {
-                    ++s_iter;
-                } while (!isEnd(s_iter) && s_iter.data() == (data_type)0);
-            }
-            in_dyna = isEnd(s_iter);
-            if (!in_dyna && !isEnd(d_iter)) {
-                in_dyna = !key_less(s_iter.key(), d_iter.key());
-            }
+            moveForward();
             return tmp;
         }
 
         inline const_iterator& operator -- ()
         {
-            // TODO
-
+            moveBackward();
             return *this;
         }
 
@@ -315,8 +447,7 @@ public:
         {
             const_iterator tmp = *this;
 
-            // TODO
-
+            moveBackward();
             return tmp;
         }
 
@@ -357,6 +488,42 @@ public:
 
         mutable value_type temp_value;
 
+        bool isBegin(typename sl_type::reverse_iterator it) {
+            typename sl_type::reverse_iterator tmp_iter = it--;
+            return tmp_iter == it;
+        }
+
+        bool isEnd(typename sl_type::reverse_iterator it) {
+            typename sl_type::reverse_iterator tmp_iter = it++;
+            return tmp_iter == it;
+        }
+
+        void moveForward()
+        {
+            //SL_PRINT((in_dyna ? "d" : "s") << " " << d_iter.key() << " " << s_iter.key());
+            if (in_dyna) {
+                ++d_iter;
+                if (!isEnd(d_iter) && !isEnd(s_iter) &&
+                    !key_less(d_iter.key(), s_iter.key()) &&
+                    !key_less(s_iter.key(), d_iter.key()))
+                {
+                    ++s_iter;
+                }
+                while (!isEnd(s_iter) && s_iter.data() == (data_type)0) {
+                    ++s_iter;
+                }
+            }
+            else {
+                do {
+                    ++s_iter;
+                } while (!isEnd(s_iter) && s_iter.data() == (data_type)0);
+            }
+            in_dyna = isEnd(s_iter);
+            if (!in_dyna && !isEnd(d_iter)) {
+                in_dyna = !key_less(d_iter.key(), s_iter.key());
+            }
+        }
+
     public:
         inline reverse_iterator(bool in_dyna, typename sl_type::reverse_iterator d_iter, typename sl_type::reverse_iterator s_iter, key_compare key_less)
             : in_dyna(in_dyna), d_iter(d_iter), s_iter(s_iter), key_less(key_less)
@@ -396,7 +563,7 @@ public:
 
         inline reverse_iterator& operator ++ ()
         {
-            // TODO
+            moveForward();
             return *this;
         }
 
@@ -404,13 +571,13 @@ public:
         {
             reverse_iterator tmp = *this;
 
-            // TODO
+            moveForward();
             return tmp;
         }
 
         inline reverse_iterator& operator -- ()
         {
-            // TODO
+            *this = reverse_iterator(++iterator(*this));
             return *this;
         }
 
@@ -453,9 +620,45 @@ public:
         typename sl_type::const_reverse_iterator s_iter;
         key_compare key_less;
 
-        friend class reverse_iterator;
+        friend class const_iterator;
 
         mutable value_type temp_value;
+
+        bool isBegin(typename sl_type::const_reverse_iterator it) {
+            typename sl_type::const_reverse_iterator tmp_iter = it--;
+            return tmp_iter == it;
+        }
+
+        bool isEnd(typename sl_type::const_reverse_iterator it) {
+            typename sl_type::const_reverse_iterator tmp_iter = it++;
+            return tmp_iter == it;
+        }
+
+        void moveForward()
+        {
+            //SL_PRINT((in_dyna ? "d" : "s") << " " << d_iter.key() << " " << s_iter.key());
+            if (in_dyna) {
+                ++d_iter;
+                if (!isEnd(d_iter) && !isEnd(s_iter) &&
+                    !key_less(d_iter.key(), s_iter.key()) &&
+                    !key_less(s_iter.key(), d_iter.key()))
+                {
+                    ++s_iter;
+                }
+                while (!isEnd(s_iter) && s_iter.data() == (data_type)0) {
+                    ++s_iter;
+                }
+            }
+            else {
+                do {
+                    ++s_iter;
+                } while (!isEnd(s_iter) && s_iter.data() == (data_type)0);
+            }
+            in_dyna = isEnd(s_iter);
+            if (!in_dyna && !isEnd(d_iter)) {
+                in_dyna = !key_less(d_iter.key(), s_iter.key());
+            }
+        }
 
     public:
         inline const_reverse_iterator(bool in_dyna, typename sl_type::const_reverse_iterator d_iter, typename sl_type::const_reverse_iterator s_iter, key_compare key_less)
@@ -504,7 +707,7 @@ public:
 
         inline const_reverse_iterator& operator ++ ()
         {
-            // TODO
+            moveForward();
             return *this;
         }
 
@@ -512,13 +715,19 @@ public:
         {
             const_reverse_iterator tmp = *this;
 
-            // TODO
+            moveForward();
             return tmp;
         }
 
         inline const_reverse_iterator& operator -- ()
         {
-            // TODO
+            d_iter++;
+            s_iter++;
+            const_iterator tmp(in_dyna, d_iter, s_iter, key_less);
+            ++tmp;
+            in_dyna = tmp.in_dyna;
+            d_iter = ++tmp.d_iter;
+            s_iter = ++tmp.s_iter;
             return *this;
         }
 
@@ -544,25 +753,36 @@ public:
 private:
     sl_type *dyna_sl;
     sl_type *static_sl;
+    bloomfilter bf;
 
     key_compare m_key_less;
     allocator_type m_allocator;
 
 public:
     explicit inline skiplist_map_compact(const allocator_type& alloc = allocator_type())
+        : bf(LITTLEENDIAN, K, BITS_PER_KEY)
     {
         m_allocator = alloc;
         dyna_sl = new sl_type(alloc);
         static_sl = new sl_type(alloc);
+
+        if (USE_BLOOM_FILTER) {
+            bf.reallocate(SL_MERGE_THRESHOLD);
+        }
     }
 
     explicit inline skiplist_map_compact(const key_compare& kcf,
                                  const allocator_type& alloc = allocator_type())
+        : bf(LITTLEENDIAN, K, BITS_PER_KEY)
     {
         m_key_less = kcf;
         m_allocator = alloc;
         dyna_sl = new sl_type(kcf, alloc);
         static_sl = new sl_type(kcf, alloc);
+
+        if (USE_BLOOM_FILTER) {
+            bf.reallocate(SL_MERGE_THRESHOLD);
+        }
     }
 
     inline ~skiplist_map_compact()
@@ -575,6 +795,9 @@ public:
     {
         std::swap(dyna_sl, from.dyna_sl);
         std::swap(static_sl, from.static_sl);
+        std::swap(bf, from.bf);
+        std::swap(m_key_less, from.m_key_less);
+        std::swap(m_allocator, from.m_allocator);
     }
 
     class value_compare
@@ -660,11 +883,19 @@ public:
         typename sl_type::iterator sbegin = static_sl->begin();
         typename sl_type::iterator send = static_sl->end();
         if (sbegin == send || dbegin == dend) {
+            if (sbegin != send) {
+                while (sbegin != send && sbegin.data() == (data_type)0) {
+                    ++sbegin;
+                }
+            }
             return iterator(sbegin == send, dbegin, sbegin, m_key_less);
         }
+        while (sbegin != send && sbegin.data() == (data_type)0) {
+            ++sbegin;
+        }
         bool in_dyna =
-            key_greaterequal(sbegin.key(), dbegin.key()) ||
-            sbegin.data() == (data_type)0;
+            sbegin == send ||
+            key_greaterequal(sbegin.key(), dbegin.key());
         return iterator(in_dyna, dbegin, sbegin, m_key_less);
     }
 
@@ -685,22 +916,40 @@ public:
 
     inline reverse_iterator rbegin()
     {
-        return reverse_iterator(end());
+        typename sl_type::reverse_iterator dbegin = dyna_sl->rbegin();
+        typename sl_type::reverse_iterator dend = dyna_sl->rend();
+        typename sl_type::reverse_iterator sbegin = static_sl->rbegin();
+        typename sl_type::reverse_iterator send = static_sl->rend();
+        if (sbegin == send || dbegin == dend) {
+            if (sbegin != send) {
+                while (sbegin != send && sbegin.data() == (data_type)0) {
+                    ++sbegin;
+                }
+            }
+            return reverse_iterator(sbegin == send, dbegin, sbegin, m_key_less);
+        }
+        while (sbegin != send && sbegin.data() == (data_type)0) {
+            ++sbegin;
+        }
+        bool in_dyna =
+            sbegin == send ||
+            key_lessequal(sbegin.key(), dbegin.key());
+        return reverse_iterator(in_dyna, dbegin, sbegin, m_key_less);
     }
 
     inline reverse_iterator rend()
     {
-        return reverse_iterator(begin());
+        return iterator(true, dyna_sl->rend(), static_sl->rend(), m_key_less);
     }
 
     inline const_reverse_iterator rbegin() const
     {
-        return const_reverse_iterator(end());
+        return const_reverse_iterator(rbegin());
     }
 
     inline const_reverse_iterator rend() const
     {
-        return const_reverse_iterator(begin());
+        return const_reverse_iterator(rend());
     }
 
 public:
@@ -766,50 +1015,192 @@ public:
 
     bool exists(const key_type& key) const
     {
-        // TODO
-        return dyna_sl->exists(key) || static_sl->exists(key);
+        return (find(key) == end());
     }
 
     iterator find(const key_type& key)
     {
-        // TODO
-        return end();
+        typename sl_type::iterator it;
+
+        if (USE_BLOOM_FILTER) {
+            if (dyna_sl->size() == 0 || !bf.key_may_match(reinterpret_cast<const char*>(&key), sizeof(key_type))) {
+                // TODO actually not a valid iterator, cannot increment/decrement correctly
+                it = static_sl->find(key);
+                if (it != static_sl->end() && it.data() != (data_type)0) {
+                    // NOTE should be
+                    // return iterator(false, dyna_sl->upper_bound(key), it, m_key_less);
+                    return iterator(false, dyna_sl->end(), it, m_key_less);
+                }
+                return end();
+            }
+        }
+
+        it = dyna_sl->find(key);
+        if (it == dyna_sl->end()) {
+            it = static_sl->find(key);
+            if (it != static_sl->end() && it.data() != (data_type)0) {
+                return iterator(false, dyna_sl->end(), it, m_key_less);
+            }
+            return end();
+        }
+        return iterator(true, it, static_sl->end(), m_key_less);
+        // NOTE should be
+        // return iterator(true, it, static_sl->upper_bound(key), m_key_less);
     }
 
     const_iterator find(const key_type& key) const
     {
-        // TODO
-        return end();
+        typename sl_type::const_iterator it;
+
+        if (USE_BLOOM_FILTER) {
+            if (dyna_sl->size() == 0 || !bf.key_may_match(reinterpret_cast<const char*>(&key), sizeof(key_type))) {
+                // TODO actually not a valid iterator, cannot increment/decrement correctly
+                it = static_sl->find(key);
+                if (it != static_sl->end() && it.data() != (data_type)0) {
+                    // NOTE should be
+                    // return const_iterator(false, dyna_sl->upper_bound(key), it, m_key_less);
+                    return const_iterator(false, dyna_sl->end(), it, m_key_less);
+                }
+                return end();
+            }
+        }
+
+        it = dyna_sl->find(key);
+        if (it == dyna_sl->end()) {
+            it = static_sl->find(key);
+            if (it != static_sl->end() && it.data() != (data_type)0) {
+                return const_iterator(false, dyna_sl->end(), it, m_key_less);
+            }
+            return end();
+        }
+        return const_iterator(true, it, static_sl->end(), m_key_less);
+        // NOTE should be
+        // return const_iterator(true, it, static_sl->upper_bound(key), m_key_less);
     }
 
     size_type count(const key_type& key) const
     {
-        // TODO
-        return 0;
+        return (find(key) == end()) ? 0 : 1;
     }
 
     iterator lower_bound(const key_type& key)
     {
-        // TODO
-        return end();
+        typename sl_type::iterator dyna_it = dyna_sl->lower_bound(key);
+        typename sl_type::iterator static_it = static_sl->lower_bound(key);
+
+        // NOTE skip deleted entries in static stage
+        while (static_it != static_sl->end() && static_it.data() == (data_type)0) {
+            ++static_it;
+        }
+
+        bool dyna_end = (dyna_it == dyna_sl->end());
+        bool static_end = (static_it == static_sl->end());
+
+        if (dyna_end && static_end) {
+            return end();
+        }
+        else if (dyna_end) {
+            return iterator(false, dyna_it, static_it, m_key_less);
+        }
+        else if (static_end) {
+            return iterator(true, dyna_it, static_it, m_key_less);
+        }
+        else if (key_lessequal(dyna_it.key(), static_it.key())) {
+            return iterator(true, dyna_it, static_it, m_key_less);
+        }
+        else {
+            return iterator(false, dyna_it, static_it, m_key_less);
+        }
     }
 
     const_iterator lower_bound(const key_type& key) const
     {
-        // TODO
-        return end();
+        typename sl_type::const_iterator dyna_it = dyna_sl->lower_bound(key);
+        typename sl_type::const_iterator static_it = static_sl->lower_bound(key);
+
+        // NOTE skip deleted entries in static stage
+        while (static_it != static_sl->end() && static_it.data() == (data_type)0) {
+            ++static_it;
+        }
+
+        bool dyna_end = (dyna_it == dyna_sl->end());
+        bool static_end = (static_it == static_sl->end());
+
+        if (dyna_end && static_end) {
+            return end();
+        }
+        else if (dyna_end) {
+            return const_iterator(false, dyna_it, static_it, m_key_less);
+        }
+        else if (static_end) {
+            return const_iterator(true, dyna_it, static_it, m_key_less);
+        }
+        else if (key_lessequal(dyna_it.key(), static_it.key())) {
+            return const_iterator(true, dyna_it, static_it, m_key_less);
+        }
+        else {
+            return const_iterator(false, dyna_it, static_it, m_key_less);
+        }
     }
 
     iterator upper_bound(const key_type& key)
     {
-        // TODO
-        return end();
+        typename sl_type::iterator dyna_it = dyna_sl->upper_bound(key);
+        typename sl_type::iterator static_it = static_sl->upper_bound(key);
+
+        // NOTE skip deleted entries in static stage
+        while (static_it != static_sl->end() && static_it.data() == (data_type)0) {
+            ++static_it;
+        }
+
+        bool dyna_end = (dyna_it == dyna_sl->end());
+        bool static_end = (static_it == static_sl->end());
+
+        if (dyna_end && static_end) {
+            return end();
+        }
+        else if (dyna_end) {
+            return iterator(false, dyna_it, static_it, m_key_less);
+        }
+        else if (static_end) {
+            return iterator(true, dyna_it, static_it, m_key_less);
+        }
+        else if (key_lessequal(dyna_it.key(), static_it.key())) {
+            return iterator(true, dyna_it, static_it, m_key_less);
+        }
+        else {
+            return iterator(false, dyna_it, static_it, m_key_less);
+        }
     }
 
     const_iterator upper_bound(const key_type& key) const
     {
-        // TODO
-        return end();
+        typename sl_type::const_iterator dyna_it = dyna_sl->upper_bound(key);
+        typename sl_type::const_iterator static_it = static_sl->upper_bound(key);
+
+        // NOTE skip deleted entries in static stage
+        while (static_it != static_sl->end() && static_it.data() == (data_type)0) {
+            ++static_it;
+        }
+
+        bool dyna_end = (dyna_it == dyna_sl->end());
+        bool static_end = (static_it == static_sl->end());
+
+        if (dyna_end && static_end) {
+            return end();
+        }
+        else if (dyna_end) {
+            return const_iterator(false, dyna_it, static_it, m_key_less);
+        }
+        else if (static_end) {
+            return const_iterator(true, dyna_it, static_it, m_key_less);
+        }
+        else if (key_lessequal(dyna_it.key(), static_it.key())) {
+            return const_iterator(true, dyna_it, static_it, m_key_less);
+        }
+        else {
+            return const_iterator(false, dyna_it, static_it, m_key_less);
+        }
     }
 
 public:
@@ -839,6 +1230,13 @@ public:
     */
 
 public:
+    // NOTE dev-only, to simulate structure after merge
+    inline std::pair<iterator, bool> insert_static(const key_type& key, const data_type& data)
+    {
+        // stub, since only need bool here
+        return std::pair<iterator, bool>(end(), (static_sl->insert(key, data)).second);
+    }
+
     // *** Public Insertion Functions
 
     inline std::pair<iterator, bool> insert(const pair_type& x)
@@ -860,8 +1258,51 @@ public:
 private:
     std::pair<iterator, bool> insert_common(const key_type& key, const data_type& data)
     {
-        // TODO
-        return std::pair<iterator, bool>(begin(), false);
+        // TODO what is the semantic of update(), it calls operator[] so update() is actually update()&insert()
+        // or we just assume all update() are valid update (e.g assume they are checked beforehand)
+        if ((SL_MERGE == 1) &&
+            ((dyna_sl->size() * SL_MERGE_RATIO) >= static_sl->size()) &&
+            (dyna_sl->size() >= SL_MERGE_THRESHOLD))
+        {
+            static_sl->merge(*dyna_sl);
+        }
+
+        // NOTE actually we need to call static_sl->exists() first, and we need to return a valid iterator
+        // now assume it is not in static stage, and result iterator is not valid
+        std::pair<typename sl_type::iterator, bool> dyna_retval = dyna_sl->insert_common(key, data);
+        // NOTE static_sl->end() should be static_sl->upper_bound(key)
+        std::pair<iterator, bool> retval = std::pair<iterator, bool>(iterator(true, dyna_retval.first, static_sl->end(), m_key_less), dyna_retval.second);
+
+        if (USE_BLOOM_FILTER) {
+            bf.insert(reinterpret_cast<const char*>(&key), sizeof(key_type));
+        }
+
+        return retval;
+    }
+
+    bool static_lazy_erase_one(const key_type& key)
+    {
+        typename sl_type::iterator it = static_sl->find(key);
+        if (it != static_sl->end() && it.data() != (data_type)0) {
+            it.data() = (data_type)0;
+            SL_PRINT("static: lazy erased " << key);
+            return true;
+        }
+        return false;
+    }
+
+    void static_lazy_erase_iter(typename sl_type::iterator iter)
+    {
+        if (static_sl->is_valid_iterator(iter)) {
+            iter.data() = (data_type)0;
+        }
+    }
+
+    void static_lazy_erase_reverse_iter(typename sl_type::reverse_iterator iter)
+    {
+        if (static_sl->is_valid_reverse_iterator(iter)) {
+            iter.data() = (data_type)0;
+        }
     }
 
 public:
@@ -869,8 +1310,21 @@ public:
 
     bool erase_one(const key_type& key)
     {
-        // TODO
-        return false;
+        if (USE_BLOOM_FILTER) {
+            if (dyna_sl->size() == 0 || !bf.key_may_match(reinterpret_cast<const char*>(&key), sizeof(key_type))) {
+                return static_lazy_erase_one(key);
+            }
+        }
+
+        // NOTE commented are incorrect
+        //return dyna_sl->erase_one(key) || static_lazy_erase_one(key);
+        if (dyna_sl->erase_one(key)) {
+            static_lazy_erase_one(key);
+            return true;
+        }
+        else {
+            return static_lazy_erase_one(key);
+        }
     }
 
     size_type erase(const key_type& key)
@@ -886,12 +1340,22 @@ public:
 
     void erase(iterator iter)
     {
-        // TODO
+        if (iter.in_dyna) {
+            dyna_sl->erase(iter.d_iter);
+        }
+        else {
+            static_lazy_erase_iter(iter.s_iter);
+        }
     }
 
     void erase(reverse_iterator iter)
     {
-        // TODO
+        if (iter.in_dyna) {
+            dyna_sl->erase(iter.d_iter);
+        }
+        else {
+            static_lazy_erase_reverse_iter(iter.s_iter);
+        }
     }
 
 #ifdef SL_DEBUG

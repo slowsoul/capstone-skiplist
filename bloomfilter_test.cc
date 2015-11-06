@@ -12,4 +12,6 @@ int main() {
 
     std::cout << bf.key_may_match(reinterpret_cast<const char*>(&a), sizeof(uint64_t)) << std::endl;
     std::cout << bf.key_may_match(reinterpret_cast<const char*>(&c), sizeof(uint64_t)) << std::endl;
+
+    std::cout << bf.size() << std::endl;
 }

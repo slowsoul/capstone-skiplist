@@ -29,11 +29,11 @@ int main() {
 
     // iterator test
     std::cout << "iterator: " << std::endl;
-    for (slmap_keyIter = slmap.begin();slmap_keyIter != slmap.end();slmap_keyIter++) {
+    for (slmap_keyIter = slmap.begin();slmap_keyIter != slmap.end();++slmap_keyIter) {
         std::cout << slmap_keyIter.key() << ": " << slmap_keyIter.data() << std::endl;
     }
     std::cout << std::endl;
-    for (slmap_keyIter = --slmap.end();;slmap_keyIter--) {
+    for (slmap_keyIter = --slmap.end();;--slmap_keyIter) {
         std::cout << slmap_keyIter.key() << ": " << slmap_keyIter.data() << std::endl;
         if (slmap_keyIter == slmap.begin()) {
             break;
@@ -42,11 +42,11 @@ int main() {
 
     SkiplistType::const_reverse_iterator slmap_rev_keyIter;
     std::cout << "reverse iterator: " << std::endl;
-    for (slmap_rev_keyIter = slmap.rbegin();slmap_rev_keyIter != slmap.rend();slmap_rev_keyIter++) {
+    for (slmap_rev_keyIter = slmap.rbegin();slmap_rev_keyIter != slmap.rend();++slmap_rev_keyIter) {
         std::cout << slmap_rev_keyIter.key() << ": " << slmap_rev_keyIter.data() << std::endl;
     }
     std::cout << std::endl;
-    for (slmap_rev_keyIter = --slmap.rend();;slmap_rev_keyIter--) {
+    for (slmap_rev_keyIter = --slmap.rend();;--slmap_rev_keyIter) {
         std::cout << slmap_rev_keyIter.key() << ": " << slmap_rev_keyIter.data() << std::endl;
         if (slmap_rev_keyIter == slmap.rbegin()) {
             break;

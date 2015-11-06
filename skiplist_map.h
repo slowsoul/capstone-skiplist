@@ -14,15 +14,15 @@
 #include <iostream>
 #include <iomanip>
 
-/// Print out debug information to std::cout if BTREE_DEBUG is defined.
-#define SL_PRINT(x)          do { if (debug) (std::cout << x << std::endl); } while (0)
+/// Print out debug information to std::cout if SL_DEBUG is defined.
+#define SL_PRINT(x)          do { (std::cout << x << std::endl); } while (0)
 
 /// Assertion only if BTREE_DEBUG is defined. This is not used in verify().
 #define SL_ASSERT(x)         do { assert(x); } while (0)
 
 #else
 
-/// Print out debug information to std::cout if BTREE_DEBUG is defined.
+/// Print out debug information to std::cout if SL_DEBUG is defined.
 #define SL_PRINT(x)          do { } while (0)
 
 /// Assertion only if BTREE_DEBUG is defined. This is not used in verify().
@@ -534,10 +534,10 @@ public:
         typedef ptrdiff_t difference_type;
 
     private:
-        typename skiplist_map::leaf_node *currnode;
+        const typename skiplist_map::leaf_node *currnode;
         short currindex;
 
-        friend class reverse_iterator;
+        friend class const_iterator;
         friend class skiplist_map<key_type, data_type, key_compare, traits,
                                   allow_duplicates, allocator_type>;
 
@@ -1547,6 +1547,30 @@ private:
         return std::pair<iterator, bool>(iterator(ln, i), true);
     }
 
+    bool is_valid_iterator(iterator iter) const
+    {
+        if (NULL == iter.currnode ||
+            (iter.currnode)->is_leaf == 0 ||
+            iter == end() ||
+            iter.currindex < 0 ||
+            iter.currindex >= (iter.currnode)->count) {
+            return false;
+        }
+        return true;
+    }
+
+    bool is_valid_reverse_iterator(reverse_iterator iter) const
+    {
+        if (NULL == iter.currnode ||
+            (iter.currnode)->is_leaf == 0 ||
+            iter == rend() ||
+            iter.currindex <= 0 ||
+            iter.currindex > (iter.currnode)->count) {
+            return false;
+        }
+        return true;
+    }
+
 public:
     // *** Public Erase Functions
 
@@ -1653,28 +1677,23 @@ public:
 
     void erase(iterator iter)
     {
-        if (NULL == iter.currnode ||
-            (iter.currnode)->is_leaf == 0 ||
-            iter == end() ||
-            iter.currindex < 0 ||
-            iter.currindex >= (iter.currnode)->count) {
-            return;
+        if (is_valid_iterator(iter)) {
+            erase_one(iter.key());
         }
-
-        erase_one(iter.key());
     }
 
     void erase(reverse_iterator iter)
     {
-        if (NULL == iter.currnode ||
-            (iter.currnode)->is_leaf == 0 ||
-            iter == rend() ||
-            iter.currindex <= 0 ||
-            iter.currindex > (iter.currnode)->count) {
-            return;
+        if (is_valid_reverse_iterator(iter)) {
+            erase_one(iter.key());
         }
+    }
 
-        erase_one(iter.key());
+private:
+    // for static stage skiplist, it is the only way to rebuild it
+    void merge(self_type& from)
+    {
+
     }
 
 #ifdef SL_DEBUG
