@@ -4,17 +4,18 @@ int main() {
     typedef cmu::skiplist_map_compact<uint64_t, uint64_t> SkiplistType;
     SkiplistType slmap;
     SkiplistType::const_iterator slmap_keyIter;
+    SkiplistType::const_reverse_iterator slmap_rev_keyIter;
 
     // insert test
     std::pair<typename SkiplistType::iterator, bool> retval;
 
     for (int i = 0; i < 10; i++) {
         if (i % 2 == 0) {
-            retval = slmap.insert(i, i);
+            retval = slmap.insert(i*2, i*2);
             assert(retval.second == true);
         }
         else {
-            retval = slmap.insert_static(i, i);
+            retval = slmap.insert_static(i*2, i*2);
             assert(retval.second == true);
         }
     }
@@ -22,16 +23,9 @@ int main() {
     slmap.print(std::cout);
 
     // update test
-    slmap[2] = 4;
-    slmap[5] = 10;
-    assert(slmap.find(5).data() == 10);
-
-    // find test
-    slmap_keyIter = slmap.find(2);
-    assert(slmap_keyIter != slmap.end());
-
-    slmap_keyIter = slmap.find(200);
-    assert(slmap_keyIter == slmap.end());
+    slmap[4] = 8;
+    slmap[10] = 20;
+    assert(slmap.find(10).data() == 20);
 
     // erase key test
     bool erased = slmap.erase(200);
@@ -39,21 +33,62 @@ int main() {
 
     slmap.print(std::cout);
 
-    erased = slmap.erase(1);
+    erased = slmap.erase(2);
     assert(erased == true);
 
     slmap.print(std::cout);
 
-    erased = slmap.erase(1);
+    erased = slmap.erase(2);
     assert(erased == false);
 
     slmap.print(std::cout);
 
-    erased = slmap.erase(3);
+    erased = slmap.erase(6);
     assert(erased == true);
 
-    //erased = slmap.erase(5);
-    //assert(erased == true);
+    erased = slmap.erase(12);
+    assert(erased == true);
+
+    slmap.print(std::cout);
+
+    // find test
+    slmap_keyIter = slmap.find(4);
+    assert(slmap_keyIter != slmap.end());
+
+    slmap_keyIter = slmap.find(14);
+    assert(slmap_keyIter != slmap.end());
+
+    slmap_keyIter = slmap.find(200);
+    assert(slmap_keyIter == slmap.end());
+
+    // lowerbound test
+    slmap_keyIter = slmap.lower_bound(7);
+    assert(slmap_keyIter.key() == 8);
+
+    slmap_keyIter = slmap.lower_bound(8);
+    assert(slmap_keyIter.key() == 8);
+
+    slmap_keyIter = slmap.lower_bound(9);
+    assert(slmap_keyIter.key() == 10);
+
+    // lower bound iterator test
+    std::cout << "lower_bound iterator: " << std::endl;
+    for (slmap_keyIter = slmap.lower_bound(10);slmap_keyIter != slmap.end();++slmap_keyIter) {
+        std::cout << slmap_keyIter.key() << ": " << slmap_keyIter.data() << std::endl;
+    }
+
+    // upper bound iterator test
+    std::cout << "upper_bound iterator: " << std::endl;
+    for (slmap_keyIter = slmap.upper_bound(16);slmap_keyIter != slmap.end();++slmap_keyIter) {
+        std::cout << slmap_keyIter.key() << ": " << slmap_keyIter.data() << std::endl;
+    }
+
+    /*
+    std::cout << "reverse iterator: " << std::endl;
+    for (slmap_rev_keyIter = slmap.lower_bound(13);slmap_rev_keyIter != slmap.rend();++slmap_rev_keyIter) {
+        std::cout << slmap_rev_keyIter.key() << ": " << slmap_rev_keyIter.data() << std::endl;
+    }
+    */
 
     // iterator test
     std::cout << "iterator: " << std::endl;
@@ -70,8 +105,7 @@ int main() {
     }
     */
 
-
-    SkiplistType::const_reverse_iterator slmap_rev_keyIter;
+    /*
     std::cout << "reverse iterator: " << std::endl;
     for (slmap_rev_keyIter = slmap.rbegin();slmap_rev_keyIter != slmap.rend();++slmap_rev_keyIter) {
         std::cout << slmap_rev_keyIter.key() << ": " << slmap_rev_keyIter.data() << std::endl;
@@ -88,22 +122,28 @@ int main() {
             onemore = true;
         }
     }
-
+    */
 
     // erase iterator test
-    /*
     SkiplistType::iterator slmap_nonconst_keyIter;
-    slmap_nonconst_keyIter = slmap.find(2);
+    slmap_nonconst_keyIter = slmap.lower_bound(8);
     assert(slmap_nonconst_keyIter != slmap.end());
     slmap.erase(slmap_nonconst_keyIter);
-    slmap.print(std::cout);
-
-    slmap_nonconst_keyIter = slmap.find(3);
-    assert(slmap_nonconst_keyIter != slmap.end());
-    slmap.erase(slmap_nonconst_keyIter);
-    slmap_nonconst_keyIter = slmap.find(2);
+    slmap_nonconst_keyIter = slmap.find(8);
     assert(slmap_nonconst_keyIter == slmap.end());
-
     slmap.print(std::cout);
-    */
+
+    slmap_nonconst_keyIter = slmap.upper_bound(10);
+    assert(slmap_nonconst_keyIter != slmap.end());
+    slmap.erase(slmap_nonconst_keyIter);
+    slmap_nonconst_keyIter = slmap.find(14);
+    assert(slmap_nonconst_keyIter == slmap.end());
+    slmap.print(std::cout);
+
+    std::cout << "finally: iterator: " << std::endl;
+    for (slmap_keyIter = slmap.begin();slmap_keyIter != slmap.end();++slmap_keyIter) {
+        std::cout << slmap_keyIter.key() << ": " << slmap_keyIter.data() << std::endl;
+    }
+
+    // TODO merge test
 }

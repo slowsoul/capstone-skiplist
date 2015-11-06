@@ -1547,7 +1547,7 @@ private:
         return std::pair<iterator, bool>(iterator(ln, i), true);
     }
 
-    bool is_valid_iterator(iterator iter) const
+    bool is_valid_iterator(iterator iter)
     {
         if (NULL == iter.currnode ||
             (iter.currnode)->is_leaf == 0 ||
@@ -1559,7 +1559,7 @@ private:
         return true;
     }
 
-    bool is_valid_reverse_iterator(reverse_iterator iter) const
+    bool is_valid_reverse_iterator(reverse_iterator iter)
     {
         if (NULL == iter.currnode ||
             (iter.currnode)->is_leaf == 0 ||

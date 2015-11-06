@@ -75,6 +75,8 @@ public:
         friend class reverse_iterator;
         friend class const_iterator;
         friend class const_reverse_iterator;
+        friend class skiplist_map_compact<_Key, _Data, _Compare, _Traits,
+                             _Duplicates, _Alloc>;
 
         mutable value_type temp_value;
 
@@ -86,60 +88,6 @@ public:
         bool isEnd(typename sl_type::iterator it) {
             typename sl_type::iterator tmp_iter = it++;
             return tmp_iter == it;
-        }
-
-        void moveBackward()
-        {
-            // initial state
-            if (isEnd(d_iter) && isEnd(s_iter)) {
-                if (isBegin(d_iter) && !isBegin(s_iter)) {
-                    in_dyna = false;
-                    do {
-                        --s_iter;
-                    } while (!isBegin(s_iter) && s_iter.data() == (data_type)0);
-                }
-                else if (!isBegin(d_iter) && isBegin(s_iter)) {
-                    in_dyna = true;
-                    --d_iter;
-                }
-                else if (!isBegin(d_iter) && !isBegin(s_iter)) {
-                    --d_iter;
-                    --s_iter;
-                    if (!key_less(d_iter.key(), s_iter.key()) &&
-                        !key_less(s_iter.key(), d_iter.key()))
-                    {
-                        --s_iter;
-                    }
-                    while (!isBegin(s_iter) && s_iter.data() == (data_type)0) {
-                        --s_iter;
-                    }
-                    in_dyna = !key_less(d_iter.key(), s_iter.key());
-                }
-            }
-            else {
-                //SL_PRINT((in_dyna ? "d" : "s") << " " << d_iter.key() << " " << s_iter.key());
-                if (in_dyna) {
-                    --d_iter;
-                    if (!isEnd(s_iter) &&
-                        !key_less(d_iter.key(), s_iter.key()) &&
-                        !key_less(s_iter.key(), d_iter.key()))
-                    {
-                        --s_iter;
-                    }
-                    while (!isBegin(s_iter) && s_iter.data() == (data_type)0) {
-                        --s_iter;
-                    }
-                }
-                else {
-                    do {
-                        --s_iter;
-                    } while (!isBegin(s_iter) && s_iter.data() == (data_type)0);
-                }
-                in_dyna = !key_less(d_iter.key(), s_iter.key());
-                if (isBegin(d_iter) && isBegin(s_iter)) {
-                    in_dyna = !in_dyna;
-                }
-            }
         }
 
         void moveForward()
@@ -221,7 +169,7 @@ public:
 
         inline iterator& operator -- ()
         {
-            moveBackward();
+            // TODO
             return *this;
         }
 
@@ -229,7 +177,7 @@ public:
         {
             iterator tmp = *this;
 
-            moveBackward();
+            // TODO
             return tmp;
         }
 
@@ -265,6 +213,8 @@ public:
         key_compare key_less;
 
         friend class const_reverse_iterator;
+        friend class skiplist_map_compact<_Key, _Data, _Compare, _Traits,
+                             _Duplicates, _Alloc>;
 
         mutable value_type temp_value;
 
@@ -276,80 +226,6 @@ public:
         bool isEnd(typename sl_type::const_iterator it) {
             typename sl_type::const_iterator tmp_iter = it++;
             return tmp_iter == it;
-        }
-
-        void moveBackward()
-        {
-            // initial state
-            if (isEnd(d_iter) && isEnd(s_iter)) {
-                if (isBegin(d_iter) && !isBegin(s_iter)) {
-                    in_dyna = false;
-                    do {
-                        --s_iter;
-                    } while (!isBegin(s_iter) && s_iter.data() == (data_type)0);
-                }
-                else if (!isBegin(d_iter) && isBegin(s_iter)) {
-                    in_dyna = true;
-                    --d_iter;
-                }
-                else if (!isBegin(d_iter) && !isBegin(s_iter)) {
-                    --d_iter;
-                    --s_iter;
-                    if (!key_less(d_iter.key(), s_iter.key()) &&
-                        !key_less(s_iter.key(), d_iter.key()))
-                    {
-                        --s_iter;
-                    }
-                    while (!isBegin(s_iter) && s_iter.data() == (data_type)0) {
-                        --s_iter;
-                    }
-                    in_dyna = !key_less(d_iter.key(), s_iter.key());
-                }
-            }
-            else {
-                SL_PRINT((in_dyna ? "d" : "s") << " " << d_iter.key() << " " << s_iter.key());
-                bool static_empty = false;
-                if (in_dyna) {
-                    --d_iter;
-                    if (!isEnd(s_iter) &&
-                        !key_less(d_iter.key(), s_iter.key()) &&
-                        !key_less(s_iter.key(), d_iter.key()))
-                    {
-                        --s_iter;
-                    }
-                    while (!isBegin(s_iter) && s_iter.data() == (data_type)0) {
-                        --s_iter;
-                    }
-                    typename sl_type::const_iterator tmp(s_iter);
-                    do {
-                        --s_iter;
-                    } while (!isBegin(s_iter) && s_iter.data() == (data_type)0);
-                    if (isBegin(s_iter) && s_iter.data() == (data_type)0) {
-                        static_empty = true;
-                    }
-                    s_iter.currnode = tmp.currnode;
-                    s_iter.currindex = tmp.currindex;
-                }
-                else {
-                    typename sl_type::const_iterator tmp(s_iter);
-                    do {
-                        --s_iter;
-                    } while (!isBegin(s_iter) && s_iter.data() == (data_type)0);
-                    if (isBegin(s_iter) && s_iter.data() == (data_type)0) {
-                        s_iter.currnode = tmp.currnode;
-                        s_iter.currindex = tmp.currindex;
-                        static_empty = true;
-                    }
-                }
-                in_dyna = isEnd(s_iter);
-                if (!in_dyna && !isEnd(d_iter)) {
-                    in_dyna = static_empty ||
-                              !key_less(d_iter.key(), s_iter.key());
-                    if (isBegin(d_iter) && isBegin(s_iter)) {
-                        in_dyna = !in_dyna;
-                    }
-                }
-            }
         }
 
         void moveForward()
@@ -439,7 +315,7 @@ public:
 
         inline const_iterator& operator -- ()
         {
-            moveBackward();
+            // TODO
             return *this;
         }
 
@@ -447,7 +323,7 @@ public:
         {
             const_iterator tmp = *this;
 
-            moveBackward();
+            // TODO
             return tmp;
         }
 
@@ -485,6 +361,8 @@ public:
         friend class iterator;
         friend class const_iterator;
         friend class const_reverse_iterator;
+        friend class skiplist_map_compact<_Key, _Data, _Compare, _Traits,
+                             _Duplicates, _Alloc>;
 
         mutable value_type temp_value;
 
@@ -500,7 +378,7 @@ public:
 
         void moveForward()
         {
-            //SL_PRINT((in_dyna ? "d" : "s") << " " << d_iter.key() << " " << s_iter.key());
+            SL_PRINT((in_dyna ? "d" : "s") << " " << d_iter.key() << " " << s_iter.key());
             if (in_dyna) {
                 ++d_iter;
                 if (!isEnd(d_iter) && !isEnd(s_iter) &&
@@ -522,6 +400,18 @@ public:
             if (!in_dyna && !isEnd(d_iter)) {
                 in_dyna = !key_less(d_iter.key(), s_iter.key());
             }
+        }
+
+        void moveBackward()
+        {
+            d_iter++;
+            s_iter++;
+            iterator tmp(in_dyna, d_iter, s_iter, key_less);
+            ++tmp;
+
+            in_dyna = tmp.in_dyna;
+            d_iter = ++tmp.d_iter;
+            s_iter = ++tmp.s_iter;
         }
 
     public:
@@ -577,7 +467,7 @@ public:
 
         inline reverse_iterator& operator -- ()
         {
-            *this = reverse_iterator(++iterator(*this));
+            moveBackward();
             return *this;
         }
 
@@ -585,7 +475,7 @@ public:
         {
             reverse_iterator tmp = *this;
 
-            // TODO
+            moveBackward();
             return tmp;
         }
 
@@ -621,6 +511,8 @@ public:
         key_compare key_less;
 
         friend class const_iterator;
+        friend class skiplist_map_compact<_Key, _Data, _Compare, _Traits,
+                             _Duplicates, _Alloc>;
 
         mutable value_type temp_value;
 
@@ -636,7 +528,7 @@ public:
 
         void moveForward()
         {
-            //SL_PRINT((in_dyna ? "d" : "s") << " " << d_iter.key() << " " << s_iter.key());
+            SL_PRINT((in_dyna ? "d" : "s") << " " << d_iter.key() << " " << s_iter.key());
             if (in_dyna) {
                 ++d_iter;
                 if (!isEnd(d_iter) && !isEnd(s_iter) &&
@@ -658,6 +550,18 @@ public:
             if (!in_dyna && !isEnd(d_iter)) {
                 in_dyna = !key_less(d_iter.key(), s_iter.key());
             }
+        }
+
+        void moveBackward()
+        {
+            d_iter++;
+            s_iter++;
+            const_iterator tmp(in_dyna, d_iter, s_iter, key_less);
+            ++tmp;
+
+            in_dyna = tmp.in_dyna;
+            d_iter = ++tmp.d_iter;
+            s_iter = ++tmp.s_iter;
         }
 
     public:
@@ -721,13 +625,7 @@ public:
 
         inline const_reverse_iterator& operator -- ()
         {
-            d_iter++;
-            s_iter++;
-            const_iterator tmp(in_dyna, d_iter, s_iter, key_less);
-            ++tmp;
-            in_dyna = tmp.in_dyna;
-            d_iter = ++tmp.d_iter;
-            s_iter = ++tmp.s_iter;
+            moveBackward();
             return *this;
         }
 
@@ -735,7 +633,7 @@ public:
         {
             const_reverse_iterator tmp = *this;
 
-            // TODO
+            moveBackward();
             return tmp;
         }
 
@@ -1021,9 +919,10 @@ public:
     iterator find(const key_type& key)
     {
         typename sl_type::iterator it;
-
+        SL_PRINT("finding " << key);
         if (USE_BLOOM_FILTER) {
             if (dyna_sl->size() == 0 || !bf.key_may_match(reinterpret_cast<const char*>(&key), sizeof(key_type))) {
+                SL_PRINT("shortcut by bloomfilter");
                 // TODO actually not a valid iterator, cannot increment/decrement correctly
                 it = static_sl->find(key);
                 if (it != static_sl->end() && it.data() != (data_type)0) {
@@ -1051,9 +950,10 @@ public:
     const_iterator find(const key_type& key) const
     {
         typename sl_type::const_iterator it;
-
+        SL_PRINT("finding " << key);
         if (USE_BLOOM_FILTER) {
             if (dyna_sl->size() == 0 || !bf.key_may_match(reinterpret_cast<const char*>(&key), sizeof(key_type))) {
+                SL_PRINT("shortcut by bloomfilter");
                 // TODO actually not a valid iterator, cannot increment/decrement correctly
                 it = static_sl->find(key);
                 if (it != static_sl->end() && it.data() != (data_type)0) {
@@ -1105,7 +1005,11 @@ public:
         else if (static_end) {
             return iterator(true, dyna_it, static_it, m_key_less);
         }
-        else if (key_lessequal(dyna_it.key(), static_it.key())) {
+        else if (key_less(dyna_it.key(), static_it.key())) {
+            return iterator(true, dyna_it, static_it, m_key_less);
+        }
+        else if (key_equal(dyna_it.key(), static_it.key())) {
+            ++static_it;
             return iterator(true, dyna_it, static_it, m_key_less);
         }
         else {
@@ -1135,7 +1039,11 @@ public:
         else if (static_end) {
             return const_iterator(true, dyna_it, static_it, m_key_less);
         }
-        else if (key_lessequal(dyna_it.key(), static_it.key())) {
+        else if (key_less(dyna_it.key(), static_it.key())) {
+            return const_iterator(true, dyna_it, static_it, m_key_less);
+        }
+        else if (key_equal(dyna_it.key(), static_it.key())) {
+            ++static_it;
             return const_iterator(true, dyna_it, static_it, m_key_less);
         }
         else {
@@ -1165,7 +1073,11 @@ public:
         else if (static_end) {
             return iterator(true, dyna_it, static_it, m_key_less);
         }
-        else if (key_lessequal(dyna_it.key(), static_it.key())) {
+        else if (key_less(dyna_it.key(), static_it.key())) {
+            return iterator(true, dyna_it, static_it, m_key_less);
+        }
+        else if (key_equal(dyna_it.key(), static_it.key())) {
+            ++static_it;
             return iterator(true, dyna_it, static_it, m_key_less);
         }
         else {
@@ -1195,7 +1107,11 @@ public:
         else if (static_end) {
             return const_iterator(true, dyna_it, static_it, m_key_less);
         }
-        else if (key_lessequal(dyna_it.key(), static_it.key())) {
+        else if (key_less(dyna_it.key(), static_it.key())) {
+            return const_iterator(true, dyna_it, static_it, m_key_less);
+        }
+        else if (key_equal(dyna_it.key(), static_it.key())) {
+            ++static_it;
             return const_iterator(true, dyna_it, static_it, m_key_less);
         }
         else {
