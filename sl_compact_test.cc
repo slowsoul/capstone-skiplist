@@ -11,11 +11,11 @@ int main() {
 
     for (int i = 0; i < 10; i++) {
         if (i % 2 == 0) {
-            retval = slmap.insert(i*2, i*2);
+            retval = slmap.insert(i*2, i*2+1);
             assert(retval.second == true);
         }
         else {
-            retval = slmap.insert_static(i*2, i*2);
+            retval = slmap.insert_static(i*2, i*2+1);
             assert(retval.second == true);
         }
     }
@@ -146,4 +146,12 @@ int main() {
     }
 
     // TODO merge test
+    slmap.merge_dtos();
+
+    std::cout << "after merge: iterator: " << std::endl;
+    for (slmap_keyIter = slmap.begin();slmap_keyIter != slmap.end();++slmap_keyIter) {
+        std::cout << slmap_keyIter.key() << ": " << slmap_keyIter.data() << std::endl;
+    }
+
+    slmap.print(std::cout);
 }

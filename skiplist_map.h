@@ -702,6 +702,7 @@ public:
         leaf_node *l_head = static_cast<leaf_node *>(m_head);
         l_head->count = 1; // placeholder for virtual max key
         l_head->key[0] = key_type(); // placeholder for virtual max key
+        l_head->data[0] = data_type();
     }
 
     explicit inline skiplist_map(const key_compare& kcf,
@@ -718,6 +719,7 @@ public:
         leaf_node *l_head = static_cast<leaf_node *>(m_head);
         l_head->count = 1; // placeholder for virtual max key
         l_head->key[0] = key_type(); // placeholder for virtual max key
+        l_head->data[0] = data_type();
     }
 
     inline ~skiplist_map()
@@ -872,6 +874,31 @@ private:
         }
         m_head = m_head_leaf = m_tail_leaf = NULL;
         m_size = m_level = 0;
+    }
+
+    // helper function for merging, m_head will point to head leaf after
+    void clear_inner()
+    {
+        if (m_head == NULL) {
+            return;
+        }
+        node *head = m_head, *next;
+        while (!head->is_leaf) {
+            inner_node *in = static_cast<inner_node*>(head);
+            next = in->down[0];
+
+            while (in != NULL) {
+                inner_node *tmp = in->right;
+                free_node(in);
+                in = tmp;
+            }
+
+            head = next;
+        }
+
+        m_head = head;
+        m_level = 0;
+        m_inner_count = 0;
     }
 
 public:
@@ -1689,11 +1716,208 @@ public:
         }
     }
 
-private:
+// TODO private:
+public:
     // for static stage skiplist, it is the only way to rebuild it
+    // merge a normal skip list and rebuild a compact skip list
     void merge(self_type& from)
     {
+        if (m_size == 0 && from.m_size == 0) {
+            return;
+        }
 
+        clear_inner();
+        from.clear_inner();
+
+        leaf_node *dyna_ln = from.m_head_leaf;
+        leaf_node *static_ln = m_head_leaf;
+        size_t node_count = 1;
+
+        // case 1: self is empty
+        if (m_size == 0) {
+            short count = 0;
+            static_ln->count = 0;
+            while (dyna_ln != NULL) {
+                for (short i = 0; i < dyna_ln->count; i++) {
+                    if (count == l_order) {
+                        leaf_node *new_static_ln = allocate_leaf();
+                        static_ln->right = new_static_ln;
+                        new_static_ln->left = static_ln;
+                        static_ln->count = count;
+                        static_ln = new_static_ln;
+                        count = 0;
+                        node_count++;
+                    }
+                    static_ln->key[count] = dyna_ln->key[i];
+                    static_ln->data[count] = dyna_ln->data[i];
+                    count++;
+                    m_size++;
+                }
+                static_ln->count = count;
+
+                leaf_node *next_dyna_ln = dyna_ln->right;
+                if (next_dyna_ln != NULL) {
+                    from.free_node(dyna_ln);
+                }
+                dyna_ln = next_dyna_ln;
+            }
+
+            // do not count virtual max key
+            m_size--;
+            static_ln->right = NULL;
+            m_tail_leaf = static_ln;
+            m_leaf_count = node_count;
+            from.m_head = from.m_head_leaf = from.m_tail_leaf;
+            from.m_tail_leaf->count = 1;
+            from.m_tail_leaf->left = NULL;
+            from.m_tail_leaf->right = NULL;
+            from.m_size = 0;
+            from.m_leaf_count = 1;
+        }
+        else {
+            short dyna_index = 0;
+            short static_index = 0;
+            short new_index = 0;
+            m_size = 0;
+
+            leaf_node *new_static_ln = allocate_leaf();
+            m_head = m_head_leaf = new_static_ln;
+
+            while (dyna_ln != NULL && static_ln != NULL) {
+                short dyna_count = dyna_ln->count;
+                if (dyna_ln->right == NULL) {
+                    dyna_count--;
+                }
+                short static_count = static_ln->count;
+                if (static_ln->right == NULL) {
+                    static_count--;
+                }
+                while (dyna_index < dyna_count && static_index < static_count) {
+                    if (new_index == l_order) {
+                        leaf_node *next_new_static_ln = allocate_leaf();
+                        new_static_ln->right = next_new_static_ln;
+                        next_new_static_ln->left = new_static_ln;
+                        new_static_ln->count = new_index;
+                        new_static_ln = next_new_static_ln;
+                        new_index = 0;
+                        node_count++;
+                    }
+                    if (static_ln->data[static_index] == (data_type)0 ||
+                        key_equal(dyna_ln->key[dyna_index], static_ln->key[static_index]))
+                    {
+                        static_index++;
+                    }
+                    else if (key_less(dyna_ln->key[dyna_index], static_ln->key[static_index])) {
+                        new_static_ln->key[new_index] = dyna_ln->key[dyna_index];
+                        new_static_ln->data[new_index] = dyna_ln->data[dyna_index];
+                        new_index++;
+                        dyna_index++;
+                        m_size++;
+                    }
+                    else {
+                        new_static_ln->key[new_index] = static_ln->key[static_index];
+                        new_static_ln->data[new_index] = static_ln->data[static_index];
+                        new_index++;
+                        static_index++;
+                        m_size++;
+                    }
+                }
+                new_static_ln->count = new_index;
+                if (dyna_index == dyna_count) {
+                    leaf_node *next_dyna_ln = dyna_ln->right;
+                    if (next_dyna_ln != NULL) {
+                        from.free_node(dyna_ln);
+                    }
+                    dyna_ln = next_dyna_ln;
+                    dyna_index = 0;
+                }
+                else if (static_index == static_count) {
+                    leaf_node *next_static_ln = static_ln->right;
+                    free_node(static_ln);
+                    static_ln = next_static_ln;
+                    static_index = 0;
+                }
+            }
+
+            while (dyna_ln != NULL) {
+                short dyna_count = dyna_ln->count;
+                while (dyna_index < dyna_count) {
+                    if (new_index == l_order) {
+                        leaf_node *next_new_static_ln = allocate_leaf();
+                        new_static_ln->right = next_new_static_ln;
+                        next_new_static_ln->left = new_static_ln;
+                        new_static_ln->count = new_index;
+                        new_static_ln = next_new_static_ln;
+                        new_index = 0;
+                        node_count++;
+                    }
+                    new_static_ln->key[new_index] = dyna_ln->key[dyna_index];
+                    new_static_ln->data[new_index] = dyna_ln->data[dyna_index];
+                    new_index++;
+                    dyna_index++;
+                    m_size++;
+                }
+                new_static_ln->count = new_index;
+
+                leaf_node *next_dyna_ln = dyna_ln->right;
+                if (next_dyna_ln != NULL) {
+                    from.free_node(dyna_ln);
+                }
+                dyna_ln = next_dyna_ln;
+                dyna_index = 0;
+            }
+
+            while (static_ln != NULL) {
+                short static_count = static_ln->count;
+                SL_PRINT(static_count << " " << static_index);
+                while (static_index < static_count) {
+                    if (new_index == l_order) {
+                        leaf_node *next_new_static_ln = allocate_leaf();
+                        new_static_ln->right = next_new_static_ln;
+                        next_new_static_ln->left = new_static_ln;
+                        new_static_ln->count = new_index;
+                        new_static_ln = next_new_static_ln;
+                        new_index = 0;
+                        node_count++;
+                    }
+                    if (static_ln->data[static_index] == (data_type)0 &&
+                        ((static_index != static_count - 1) || (static_ln->right != NULL)))
+                    {
+                        static_index++;
+                    }
+                    else {
+                        new_static_ln->key[new_index] = static_ln->key[static_index];
+                        new_static_ln->data[new_index] = static_ln->data[static_index];
+                        new_index++;
+                        static_index++;
+                        m_size++;
+                    }
+                }
+                new_static_ln->count = new_index;
+
+                leaf_node *next_static_ln = static_ln->right;
+                free_node(static_ln);
+                static_ln = next_static_ln;
+                static_index = 0;
+            }
+
+            m_size--;
+            new_static_ln->right = NULL;
+            m_tail_leaf = new_static_ln;
+            m_leaf_count = node_count;
+            from.m_head = from.m_head_leaf = from.m_tail_leaf;
+            from.m_tail_leaf->count = 1;
+            from.m_tail_leaf->left = NULL;
+            from.m_tail_leaf->right = NULL;
+            from.m_size = 0;
+            from.m_leaf_count = 1;
+        }
+
+        // TODO build inner nodes
+        while (node_count > 1) {
+            node_count = 1; // stub
+        }
+        // TODO set m_inner_count at last
     }
 
 #ifdef SL_DEBUG

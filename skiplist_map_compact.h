@@ -1274,6 +1274,13 @@ public:
         }
     }
 
+// NOTE dev-only
+public:
+    void merge_dtos()
+    {
+        static_sl->merge(*dyna_sl);
+    }
+
 #ifdef SL_DEBUG
 
 public:

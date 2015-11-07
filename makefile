@@ -8,7 +8,10 @@ all: sl_test sl_compact_test slp_test bloomfilter_test
 sl_test.o: sl_test.cc skiplist_map.h
 	$(CXX) $(CFLAGS) -c -o $@ $<
 
-sl_compact_test.o: sl_compact_test.cc skiplist_map_compact.h
+sl_compact_test.o: sl_compact_test.cc skiplist_map.h skiplist_map_compact.h
+	$(CXX) $(CFLAGS) -c -o $@ $<
+
+sl_compact_merge_test.o: sl_compact_merge_test.cc skiplist_map.h skiplist_map_compact.h
 	$(CXX) $(CFLAGS) -c -o $@ $<
 
 slp_test.o: slp_test.cc slp.h
@@ -21,6 +24,9 @@ sl_test: sl_test.o
 	$(CXX) $(CFLAGS) -o $@ $< $(MEMMGR) -lpthread -lm
 
 sl_compact_test: sl_compact_test.o
+	$(CXX) $(CFLAGS) -o $@ $< $(MEMMGR) -lpthread -lm
+
+sl_compact_merge_test: sl_compact_merge_test.o
 	$(CXX) $(CFLAGS) -o $@ $< $(MEMMGR) -lpthread -lm
 
 slp_test: slp_test.o
