@@ -11,7 +11,7 @@
 #include "bloomfilter.h"
 #include "skiplist_map.h"
 
-#define SL_MERGE 0
+#define SL_MERGE 1
 #define SL_MERGE_THRESHOLD 100
 #define SL_MERGE_RATIO 10
 
@@ -230,7 +230,7 @@ public:
 
         void moveForward()
         {
-            //SL_PRINT((in_dyna ? "sd" : "ss") << " " << d_iter.key() << " " << s_iter.key());
+            //SL_PRINT((in_dyna ? "d" : "s") << " " << d_iter.key() << " " << s_iter.key());
             if (in_dyna) {
                 ++d_iter;
                 if (!isEnd(d_iter) && !isEnd(s_iter) &&
@@ -378,7 +378,7 @@ public:
 
         void moveForward()
         {
-            SL_PRINT((in_dyna ? "d" : "s") << " " << d_iter.key() << " " << s_iter.key());
+            //SL_PRINT((in_dyna ? "d" : "s") << " " << d_iter.key() << " " << s_iter.key());
             if (in_dyna) {
                 ++d_iter;
                 if (!isEnd(d_iter) && !isEnd(s_iter) &&
@@ -528,7 +528,7 @@ public:
 
         void moveForward()
         {
-            SL_PRINT((in_dyna ? "d" : "s") << " " << d_iter.key() << " " << s_iter.key());
+            //SL_PRINT((in_dyna ? "d" : "s") << " " << d_iter.key() << " " << s_iter.key());
             if (in_dyna) {
                 ++d_iter;
                 if (!isEnd(d_iter) && !isEnd(s_iter) &&
@@ -1180,7 +1180,7 @@ private:
             ((dyna_sl->size() * SL_MERGE_RATIO) >= static_sl->size()) &&
             (dyna_sl->size() >= SL_MERGE_THRESHOLD))
         {
-            static_sl->merge(*dyna_sl);
+            merge_dtos();
         }
 
         // NOTE actually we need to call static_sl->exists() first, and we need to return a valid iterator
@@ -1275,10 +1275,14 @@ public:
     }
 
 // NOTE dev-only
-public:
+private:
     void merge_dtos()
     {
         static_sl->merge(*dyna_sl);
+
+        if (USE_BLOOM_FILTER) {
+            bf.reallocate(static_sl->size() / SL_MERGE_RATIO);
+        }
     }
 
 #ifdef SL_DEBUG

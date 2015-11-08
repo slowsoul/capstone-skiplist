@@ -1025,9 +1025,19 @@ public:
 
     bool exists(const key_type& key) const
     {
-        if (m_tail_leaf->count < 2 ||
-            key_greater(key, m_tail_leaf->key[m_tail_leaf->count - 2])) {
+        if (m_head_leaf->count > 1 && key_less(key, m_head_leaf->key[0])) {
             return false;
+        }
+        if (m_tail_leaf->count > 1) {
+            if (key_greater(key, m_tail_leaf->key[m_tail_leaf->count - 2])) {
+                return false;
+            }
+        }
+        else if (m_tail_leaf->left != NULL) {
+            leaf_node *prev_leaf = m_tail_leaf->left;
+            if (key_greater(key, prev_leaf->key[prev_leaf->count - 1])) {
+                return false;
+            }
         }
 
         const node *n = m_head;
@@ -1052,9 +1062,19 @@ public:
 
     iterator find(const key_type& key)
     {
-        if (m_tail_leaf->count < 2 ||
-            key_greater(key, m_tail_leaf->key[m_tail_leaf->count - 2])) {
+        if (m_head_leaf->count > 1 && key_less(key, m_head_leaf->key[0])) {
             return end();
+        }
+        if (m_tail_leaf->count > 1) {
+            if (key_greater(key, m_tail_leaf->key[m_tail_leaf->count - 2])) {
+                return end();
+            }
+        }
+        else if (m_tail_leaf->left != NULL) {
+            leaf_node *prev_leaf = m_tail_leaf->left;
+            if (key_greater(key, prev_leaf->key[prev_leaf->count - 1])) {
+                return end();
+            }
         }
 
         node *n = m_head;
@@ -1079,9 +1099,19 @@ public:
 
     const_iterator find(const key_type& key) const
     {
-        if (m_tail_leaf->count < 2 ||
-            key_greater(key, m_tail_leaf->key[m_tail_leaf->count - 2])) {
+        if (m_head_leaf->count > 1 && key_less(key, m_head_leaf->key[0])) {
             return end();
+        }
+        if (m_tail_leaf->count > 1) {
+            if (key_greater(key, m_tail_leaf->key[m_tail_leaf->count - 2])) {
+                return end();
+            }
+        }
+        else if (m_tail_leaf->left != NULL) {
+            leaf_node *prev_leaf = m_tail_leaf->left;
+            if (key_greater(key, prev_leaf->key[prev_leaf->count - 1])) {
+                return end();
+            }
         }
 
         const node *n = m_head;
@@ -1106,9 +1136,19 @@ public:
 
     size_type count(const key_type& key) const
     {
-        if (m_tail_leaf->count < 2 ||
-            key_greater(key, m_tail_leaf->key[m_tail_leaf->count - 2])) {
-            return false;
+        if (m_head_leaf->count > 1 && key_less(key, m_head_leaf->key[0])) {
+            return 0;
+        }
+        if (m_tail_leaf->count > 1) {
+            if (key_greater(key, m_tail_leaf->key[m_tail_leaf->count - 2])) {
+                return 0;
+            }
+        }
+        else if (m_tail_leaf->left != NULL) {
+            leaf_node *prev_leaf = m_tail_leaf->left;
+            if (key_greater(key, prev_leaf->key[prev_leaf->count - 1])) {
+                return 0;
+            }
         }
 
         const node *n = m_head;
@@ -1133,9 +1173,16 @@ public:
 
     iterator lower_bound(const key_type& key)
     {
-        if (m_tail_leaf->count < 2 ||
-            key_greater(key, m_tail_leaf->key[m_tail_leaf->count - 2])) {
-            return end();
+        if (m_tail_leaf->count > 1) {
+            if (key_greater(key, m_tail_leaf->key[m_tail_leaf->count - 2])) {
+                return end();
+            }
+        }
+        else if (m_tail_leaf->left != NULL) {
+            leaf_node *prev_leaf = m_tail_leaf->left;
+            if (key_greater(key, prev_leaf->key[prev_leaf->count - 1])) {
+                return end();
+            }
         }
 
         node *n = m_head;
@@ -1160,9 +1207,16 @@ public:
 
     const_iterator lower_bound(const key_type& key) const
     {
-        if (m_tail_leaf->count < 2 ||
-            key_greater(key, m_tail_leaf->key[m_tail_leaf->count - 2])) {
-            return end();
+        if (m_tail_leaf->count > 1) {
+            if (key_greater(key, m_tail_leaf->key[m_tail_leaf->count - 2])) {
+                return end();
+            }
+        }
+        else if (m_tail_leaf->left != NULL) {
+            leaf_node *prev_leaf = m_tail_leaf->left;
+            if (key_greater(key, prev_leaf->key[prev_leaf->count - 1])) {
+                return end();
+            }
         }
 
         const node *n = m_head;
@@ -1187,9 +1241,16 @@ public:
 
     iterator upper_bound(const key_type& key)
     {
-        if (m_tail_leaf->count < 2 ||
-            key_greaterequal(key, m_tail_leaf->key[m_tail_leaf->count - 2])) {
-            return end();
+        if (m_tail_leaf->count > 1) {
+            if (key_greaterequal(key, m_tail_leaf->key[m_tail_leaf->count - 2])) {
+                return end();
+            }
+        }
+        else if (m_tail_leaf->left != NULL) {
+            leaf_node *prev_leaf = m_tail_leaf->left;
+            if (key_greaterequal(key, prev_leaf->key[prev_leaf->count - 1])) {
+                return end();
+            }
         }
 
         node *n = m_head;
@@ -1214,9 +1275,16 @@ public:
 
     const_iterator upper_bound(const key_type& key) const
     {
-        if (m_tail_leaf->count < 2 ||
-            key_greaterequal(key, m_tail_leaf->key[m_tail_leaf->count - 2])) {
-            return end();
+        if (m_tail_leaf->count > 1) {
+            if (key_greaterequal(key, m_tail_leaf->key[m_tail_leaf->count - 2])) {
+                return end();
+            }
+        }
+        else if (m_tail_leaf->left != NULL) {
+            leaf_node *prev_leaf = m_tail_leaf->left;
+            if (key_greaterequal(key, prev_leaf->key[prev_leaf->count - 1])) {
+                return end();
+            }
         }
 
         const node *n = m_head;
@@ -1603,6 +1671,21 @@ public:
 
     bool erase_one(const key_type& key)
     {
+        if (m_head_leaf->count > 1 && key_less(key, m_head_leaf->key[0])) {
+            return false;
+        }
+        if (m_tail_leaf->count > 1) {
+            if (key_greater(key, m_tail_leaf->key[m_tail_leaf->count - 2])) {
+                return false;
+            }
+        }
+        else if (m_tail_leaf->left != NULL) {
+            leaf_node *prev_leaf = m_tail_leaf->left;
+            if (key_greater(key, prev_leaf->key[prev_leaf->count - 1])) {
+                return false;
+            }
+        }
+
         node *n = m_head;
         short i;
 
@@ -1716,8 +1799,7 @@ public:
         }
     }
 
-// TODO private:
-public:
+private:
     // for static stage skiplist, it is the only way to rebuild it
     // merge a normal skip list and rebuild a compact skip list
     void merge(self_type& from)
@@ -1766,13 +1848,11 @@ public:
             m_size--;
             static_ln->right = NULL;
             m_tail_leaf = static_ln;
-            m_leaf_count = node_count;
             from.m_head = from.m_head_leaf = from.m_tail_leaf;
             from.m_tail_leaf->count = 1;
             from.m_tail_leaf->left = NULL;
             from.m_tail_leaf->right = NULL;
             from.m_size = 0;
-            from.m_leaf_count = 1;
         }
         else {
             short dyna_index = 0;
@@ -1869,7 +1949,6 @@ public:
 
             while (static_ln != NULL) {
                 short static_count = static_ln->count;
-                SL_PRINT(static_count << " " << static_index);
                 while (static_index < static_count) {
                     if (new_index == l_order) {
                         leaf_node *next_new_static_ln = allocate_leaf();
@@ -1910,14 +1989,62 @@ public:
             from.m_tail_leaf->left = NULL;
             from.m_tail_leaf->right = NULL;
             from.m_size = 0;
-            from.m_leaf_count = 1;
         }
 
-        // TODO build inner nodes
-        while (node_count > 1) {
-            node_count = 1; // stub
+        // build inner nodes
+        m_level = 0;
+        if (node_count > 1) {
+            inner_node *head_inner;
+            static_ln = m_head_leaf;
+            inner_node *static_in = allocate_inner();
+            head_inner = static_in;
+            node_count = 1;
+            short inner_index = 0;
+            while (static_ln != NULL) {
+                if (inner_index == i_order) {
+                    inner_node *next_static_in = allocate_inner();
+                    static_in->right = next_static_in;
+                    static_in->count = inner_index;
+                    static_in = next_static_in;
+                    node_count++;
+                    inner_index = 0;
+                }
+                static_in->key[inner_index] = static_ln->key[static_ln->count - 1];
+                static_in->down[inner_index] = static_ln;
+                inner_index++;
+                static_ln = static_ln->right;
+            }
+            static_in->right = NULL;
+            static_in->count = inner_index;
+            m_level++;
+
+            while (node_count > 1) {
+                inner_node *static_in = head_inner;
+                inner_node *upper_static_in = allocate_inner();
+                head_inner = upper_static_in;
+                node_count = 1;
+                short inner_index = 0;
+                while (static_in != NULL) {
+                    if (inner_index == i_order) {
+                        inner_node *next_upper_static_in = allocate_inner();
+                        upper_static_in->right = next_upper_static_in;
+                        upper_static_in->count = inner_index;
+                        upper_static_in = next_upper_static_in;
+                        node_count++;
+                        inner_index = 0;
+                    }
+                    upper_static_in->key[inner_index] = static_in->key[static_in->count - 1];
+                    upper_static_in->down[inner_index] = static_in;
+                    inner_index++;
+                    static_in = static_in->right;
+                }
+                upper_static_in->right = NULL;
+                upper_static_in->count = inner_index;
+                m_level++;
+            }
+
+            m_head = head_inner;
         }
-        // TODO set m_inner_count at last
     }
 
 #ifdef SL_DEBUG
@@ -1929,6 +2056,8 @@ public:
     {
         os << "Level: " << m_level << std::endl;
         os << "Size: " << m_size << std::endl;
+        os << "Inner count: " << m_inner_count << std::endl;
+        os << "Leaf count: " << m_leaf_count << std::endl;
         os << "Inner order: " << i_order << std::endl;
         os << "Leaf order: " << l_order << std::endl;
 
