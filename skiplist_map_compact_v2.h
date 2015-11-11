@@ -213,6 +213,8 @@ public:
         key_compare key_less;
 
         friend class const_reverse_iterator;
+        friend class skiplist_map_compact<_Key, _Data, _Compare, _Traits,
+                             _Duplicates, _Alloc>;
 
         mutable value_type temp_value;
 
@@ -509,6 +511,8 @@ public:
         key_compare key_less;
 
         friend class const_iterator;
+        friend class skiplist_map_compact<_Key, _Data, _Compare, _Traits,
+                             _Duplicates, _Alloc>;
 
         mutable value_type temp_value;
 
