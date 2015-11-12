@@ -43,7 +43,7 @@
 namespace cmu {
 
 template <typename _Key, typename _Data>
-class skiplist_default_map_traits
+class skiplist_ro_default_map_traits
 {
 public:
     static const int pagesize = 512;
@@ -60,8 +60,15 @@ template <typename _Key, typename _Data,
 class skiplist_map_compact;
 
 template <typename _Key, typename _Data,
+          typename _Compare,
+          typename _Traits,
+          bool _Duplicates,
+          typename _Alloc>
+class skiplist_map;
+
+template <typename _Key, typename _Data,
           typename _Compare = std::less<_Key>,
-          typename _Traits = skiplist_default_map_traits<_Key, _Data>,
+          typename _Traits = skiplist_ro_default_map_traits<_Key, _Data>,
           bool _Duplicates = false,
           typename _Alloc = std::allocator<std::pair<_Key, _Data>>>
 class skiplist_map_ro
@@ -74,11 +81,15 @@ public:
     typedef _Traits traits;
     static const bool allow_duplicates = _Duplicates;
     typedef _Alloc allocator_type;
+    friend class skiplist_map<key_type, data_type, key_compare, traits,
+                              allow_duplicates, allocator_type>;
     SL_FRIENDS
 
 public:
     typedef skiplist_map_ro<key_type, data_type, key_compare, traits,
                             allow_duplicates, allocator_type> self_type;
+    typedef skiplist_map<key_type, data_type, key_compare, traits,
+                         allow_duplicates, allocator_type> writable_type;
     typedef std::pair<key_type, data_type> value_type;
     typedef std::pair<key_type, data_type> pair_type;
     typedef size_t size_type;
@@ -878,7 +889,7 @@ private:
 
     inline void free_node(node *n)
     {
-        if (n->is_leaf) {
+        if (1 == n->is_leaf) {
             leaf_node* ln = static_cast<leaf_node*>(n);
             m_leaf_allocator.destroy(ln);
             m_leaf_allocator.deallocate(ln, 1);
@@ -905,7 +916,7 @@ private:
             return;
         }
         node *head = m_head, *next;
-        while (!head->is_leaf) {
+        while (1 != head->is_leaf) {
             inner_node *in = static_cast<inner_node*>(head);
             next = in->down[0];
 
@@ -915,6 +926,9 @@ private:
                 in = tmp;
             }
 
+            if (-1 == head->is_leaf) {
+                break;
+            }
             head = next;
         }
 
@@ -937,7 +951,7 @@ private:
             return;
         }
         node *head = m_head, *next;
-        while (!head->is_leaf) {
+        while (1 != head->is_leaf) {
             inner_node *in = static_cast<inner_node*>(head);
             next = in->down[0];
 
@@ -947,10 +961,13 @@ private:
                 in = tmp;
             }
 
+            if (-1 == head->is_leaf) {
+                break;
+            }
             head = next;
         }
 
-        m_head = head;
+        m_head = m_head_leaf;
         m_level = 0;
         m_inner_count = 0;
     }
@@ -1058,8 +1075,8 @@ public:
                 return false;
             }
         }
-        else if (m_tail_leaf->left != NULL) {
-            leaf_node *prev_leaf = m_tail_leaf->left;
+        else if (m_leaf_count > 1) {
+            leaf_node *prev_leaf = m_leaf_array[m_leaf_count - 2];
             if (key_greater(key, prev_leaf->key[prev_leaf->count - 1])) {
                 return false;
             }
@@ -1067,8 +1084,9 @@ public:
 
         const node *n = m_head;
         short i;
+        int leaf_index;
 
-        while (!n->is_leaf) {
+        while (1 != n->is_leaf) {
             const inner_node *in = static_cast<const inner_node *>(n);
             short count = in->count - 1;
             for (i = 0; i < count; i++) {
@@ -1076,10 +1094,16 @@ public:
                     break;
                 }
             }
+
+            if (-1 == in->is_leaf) {
+                leaf_index = static_cast<int>(in->down[i]);
+                break;
+            }
             n = in->down[i];
         }
 
-        const leaf_node *ln = static_cast<const leaf_node *>(n);
+
+        const leaf_node *ln = m_leaf_array[leaf_index];
         for (i = 0; key_greater(key, ln->key[i]); i++);
 
         return key_equal(key, ln->key[i]);
@@ -1095,8 +1119,8 @@ public:
                 return end();
             }
         }
-        else if (m_tail_leaf->left != NULL) {
-            leaf_node *prev_leaf = m_tail_leaf->left;
+        else if (m_leaf_count > 1) {
+            leaf_node *prev_leaf = m_leaf_array[m_leaf_count - 2];
             if (key_greater(key, prev_leaf->key[prev_leaf->count - 1])) {
                 return end();
             }
@@ -1104,8 +1128,9 @@ public:
 
         node *n = m_head;
         short i;
+        int leaf_index;
 
-        while (!n->is_leaf) {
+        while (1 != n->is_leaf) {
             const inner_node *in = static_cast<const inner_node *>(n);
             short count = in->count - 1;
             for (i = 0; i < count; i++) {
@@ -1113,13 +1138,19 @@ public:
                     break;
                 }
             }
+
+            if (-1 == in->is_leaf) {
+                leaf_index = static_cast<int>(in->down[i]);
+                break;
+            }
             n = in->down[i];
         }
 
-        leaf_node *ln = static_cast<leaf_node *>(n);
+        leaf_node *ln = m_leaf_array[leaf_index];
         for (i = 0; key_greater(key, ln->key[i]); i++);
 
-        return key_equal(key, ln->key[i]) ? iterator(ln, i) : end();
+        return key_equal(key, ln->key[i]) ?
+               iterator(m_leaf_array, leaf_index, m_leaf_count - 1, i) : end();
     }
 
     const_iterator find(const key_type& key) const
@@ -1132,8 +1163,8 @@ public:
                 return end();
             }
         }
-        else if (m_tail_leaf->left != NULL) {
-            leaf_node *prev_leaf = m_tail_leaf->left;
+        else if (m_leaf_count > 1) {
+            leaf_node *prev_leaf = m_leaf_array[m_leaf_count - 2];
             if (key_greater(key, prev_leaf->key[prev_leaf->count - 1])) {
                 return end();
             }
@@ -1141,8 +1172,9 @@ public:
 
         const node *n = m_head;
         short i;
+        int leaf_index;
 
-        while (!n->is_leaf) {
+        while (1 != n->is_leaf) {
             const inner_node *in = static_cast<const inner_node *>(n);
             short count = in->count - 1;
             for (i = 0; i < count; i++) {
@@ -1150,13 +1182,19 @@ public:
                     break;
                 }
             }
+
+            if (-1 == in->is_leaf) {
+                leaf_index = static_cast<int>(in->down[i]);
+                break;
+            }
             n = in->down[i];
         }
 
-        const leaf_node *ln = static_cast<const leaf_node *>(n);
+        const leaf_node *ln = m_leaf_array[leaf_index];
         for (i = 0; key_greater(key, ln->key[i]); i++);
 
-        return key_equal(key, ln->key[i]) ? const_iterator(ln, i) : end();
+        return key_equal(key, ln->key[i]) ?
+               const_iterator(m_leaf_array, leaf_index, m_leaf_count - 1, i) : end();
     }
 
     size_type count(const key_type& key) const
@@ -1169,8 +1207,8 @@ public:
                 return 0;
             }
         }
-        else if (m_tail_leaf->left != NULL) {
-            leaf_node *prev_leaf = m_tail_leaf->left;
+        else if (m_leaf_count > 1) {
+            leaf_node *prev_leaf = m_leaf_array[m_leaf_count - 2];
             if (key_greater(key, prev_leaf->key[prev_leaf->count - 1])) {
                 return 0;
             }
@@ -1178,8 +1216,9 @@ public:
 
         const node *n = m_head;
         short i;
+        int leaf_index;
 
-        while (!n->is_leaf) {
+        while (1 != n->is_leaf) {
             const inner_node *in = static_cast<const inner_node *>(n);
             short count = in->count - 1;
             for (i = 0; i < count; i++) {
@@ -1187,10 +1226,15 @@ public:
                     break;
                 }
             }
+
+            if (-1 == in->is_leaf) {
+                leaf_index = static_cast<int>(in->down[i]);
+                break;
+            }
             n = in->down[i];
         }
 
-        const leaf_node *ln = static_cast<const leaf_node *>(n);
+        const leaf_node *ln = m_leaf_array[leaf_index];
         for (i = 0; key_greater(key, ln->key[i]); i++);
 
         return key_equal(key, ln->key[i]) ? 1 : 0;
@@ -1203,8 +1247,8 @@ public:
                 return end();
             }
         }
-        else if (m_tail_leaf->left != NULL) {
-            leaf_node *prev_leaf = m_tail_leaf->left;
+        else if (m_leaf_count > 1) {
+            leaf_node *prev_leaf = m_leaf_array[m_leaf_count - 2];
             if (key_greater(key, prev_leaf->key[prev_leaf->count - 1])) {
                 return end();
             }
@@ -1212,8 +1256,9 @@ public:
 
         node *n = m_head;
         short i;
+        int leaf_index;
 
-        while (!n->is_leaf) {
+        while (1 != n->is_leaf) {
             const inner_node *in = static_cast<const inner_node *>(n);
             short count = in->count - 1;
             for (i = 0; i < count; i++) {
@@ -1221,13 +1266,18 @@ public:
                     break;
                 }
             }
+
+            if (-1 == in->is_leaf) {
+                leaf_index = static_cast<int>(in->down[i]);
+                break;
+            }
             n = in->down[i];
         }
 
-        leaf_node *ln = static_cast<leaf_node *>(n);
+        leaf_node *ln = m_leaf_array[leaf_index];
         for (i = 0; key_greater(key, ln->key[i]); i++);
 
-        return iterator(ln, i);
+        return iterator(m_leaf_array, leaf_index, m_leaf_count - 1, i);
     }
 
     const_iterator lower_bound(const key_type& key) const
@@ -1237,8 +1287,8 @@ public:
                 return end();
             }
         }
-        else if (m_tail_leaf->left != NULL) {
-            leaf_node *prev_leaf = m_tail_leaf->left;
+        else if (m_leaf_count > 1) {
+            leaf_node *prev_leaf = m_leaf_array[m_leaf_count - 2];
             if (key_greater(key, prev_leaf->key[prev_leaf->count - 1])) {
                 return end();
             }
@@ -1246,8 +1296,9 @@ public:
 
         const node *n = m_head;
         short i;
+        int leaf_index;
 
-        while (!n->is_leaf) {
+        while (1 != n->is_leaf) {
             const inner_node *in = static_cast<const inner_node *>(n);
             short count = in->count - 1;
             for (i = 0; i < count; i++) {
@@ -1255,13 +1306,18 @@ public:
                     break;
                 }
             }
+
+            if (-1 == in->is_leaf) {
+                leaf_index = static_cast<int>(in->down[i]);
+                break;
+            }
             n = in->down[i];
         }
 
-        const leaf_node *ln = static_cast<const leaf_node *>(n);
+        const leaf_node *ln = m_leaf_array[leaf_index];
         for (i = 0; key_greater(key, ln->key[i]); i++);
 
-        return const_iterator(ln, i);
+        return const_iterator(m_leaf_array, leaf_index, m_leaf_count - 1, i);
     }
 
     iterator upper_bound(const key_type& key)
@@ -1271,8 +1327,8 @@ public:
                 return end();
             }
         }
-        else if (m_tail_leaf->left != NULL) {
-            leaf_node *prev_leaf = m_tail_leaf->left;
+        else if (m_leaf_count > 1) {
+            leaf_node *prev_leaf = m_leaf_array[m_leaf_count - 2];
             if (key_greaterequal(key, prev_leaf->key[prev_leaf->count - 1])) {
                 return end();
             }
@@ -1280,8 +1336,9 @@ public:
 
         node *n = m_head;
         short i;
+        int leaf_index;
 
-        while (!n->is_leaf) {
+        while (1 != n->is_leaf) {
             const inner_node *in = static_cast<const inner_node *>(n);
             short count = in->count - 1;
             for (i = 0; i < count; i++) {
@@ -1289,13 +1346,18 @@ public:
                     break;
                 }
             }
+
+            if (-1 == in->is_leaf) {
+                leaf_index = static_cast<int>(in->down[i]);
+                break;
+            }
             n = in->down[i];
         }
 
-        leaf_node *ln = static_cast<leaf_node *>(n);
+        leaf_node *ln = m_leaf_array[leaf_index];
         for (i = 0; key_greaterequal(key, ln->key[i]); i++);
 
-        return iterator(ln, i);
+        return iterator(m_leaf_array, leaf_index, m_leaf_count - 1, i);
     }
 
     const_iterator upper_bound(const key_type& key) const
@@ -1305,8 +1367,8 @@ public:
                 return end();
             }
         }
-        else if (m_tail_leaf->left != NULL) {
-            leaf_node *prev_leaf = m_tail_leaf->left;
+        else if (m_leaf_count > 1) {
+            leaf_node *prev_leaf = m_leaf_array[m_leaf_count - 2];
             if (key_greaterequal(key, prev_leaf->key[prev_leaf->count - 1])) {
                 return end();
             }
@@ -1314,8 +1376,9 @@ public:
 
         const node *n = m_head;
         short i;
+        int leaf_index;
 
-        while (!n->is_leaf) {
+        while (1 != n->is_leaf) {
             const inner_node *in = static_cast<const inner_node *>(n);
             short count = in->count - 1;
             for (i = 0; i < count; i++) {
@@ -1323,13 +1386,18 @@ public:
                     break;
                 }
             }
+
+            if (-1 == in->is_leaf) {
+                leaf_index = static_cast<int>(in->down[i]);
+                break;
+            }
             n = in->down[i];
         }
 
-        const leaf_node *ln = static_cast<const leaf_node *>(n);
+        const leaf_node *ln = m_leaf_array[leaf_index];
         for (i = 0; key_greaterequal(key, ln->key[i]); i++);
 
-        return const_iterator(ln, i);
+        return const_iterator(m_leaf_array, leaf_index, m_leaf_count - 1, i);
     }
 
 public:
@@ -1363,7 +1431,7 @@ private:
     {
         leaf_node *currnode = iter.nodearray[iter.currnodeindex];
         if (NULL == currnode ||
-            currnode->is_leaf == 0 ||
+            currnode->is_leaf != 1 ||
             iter == end() ||
             iter.currindex < 0 ||
             iter.currindex >= currnode->count) {
@@ -1376,7 +1444,7 @@ private:
     {
         leaf_node *currnode = iter.nodearray[iter.currnodeindex];
         if (NULL == currnode ||
-            currnode->is_leaf == 0 ||
+            currnode->is_leaf != 1 ||
             iter == rend() ||
             iter.currindex <= 0 ||
             iter.currindex > currnode->count) {
@@ -1385,32 +1453,42 @@ private:
         return true;
     }
 
-private:
+// TODO private:
+public:
     // for static stage skiplist, it is the only way to rebuild it
-    // merge a normal skip list and rebuild a compact skip list
-    void merge(self_type& from)
+    // merge a writable skip list and rebuild a compact skip list
+    void merge(writable_type& from)
     {
-        if (m_size == 0 && from.m_size == 0) {
+        if (from.m_size == 0) {
             return;
         }
 
         clear_inner();
         from.clear_inner();
 
-        leaf_node *dyna_ln = from.m_head_leaf;
-        leaf_node *static_ln = m_head_leaf;
+        typename writable_type::leaf_node *dyna_ln = from.m_head_leaf;
+        leaf_node *static_ln;
         size_t node_count = 1;
+        size_type new_leaf_count;
+        size_type old_leaf_count = m_leaf_count;
 
+        // rebuild leaf nodes
         // case 1: self is empty
         if (m_size == 0) {
+            new_leaf_count = from.m_leaf_count;
+            leaf_node **new_leaf_array = allocate_leaf_array(new_leaf_count);
+            m_leaf_count = 0;
+
             short count = 0;
+            int new_leaf_index = 0;
+            static_ln = allocate_leaf();
             static_ln->count = 0;
+            new_leaf_array[new_leaf_index++] = static_ln;
             while (dyna_ln != NULL) {
                 for (short i = 0; i < dyna_ln->count; i++) {
                     if (count == l_order) {
                         leaf_node *new_static_ln = allocate_leaf();
-                        static_ln->right = new_static_ln;
-                        new_static_ln->left = static_ln;
+                        new_leaf_array[new_leaf_index++] = new_static_ln;
                         static_ln->count = count;
                         static_ln = new_static_ln;
                         count = 0;
@@ -1423,16 +1501,17 @@ private:
                 }
                 static_ln->count = count;
 
-                leaf_node *next_dyna_ln = dyna_ln->right;
+                typename writable_type::leaf_node *next_dyna_ln = dyna_ln->right;
                 if (next_dyna_ln != NULL) {
                     from.free_node(dyna_ln);
                 }
                 dyna_ln = next_dyna_ln;
             }
 
-            // do not count virtual max key
-            m_size--;
-            static_ln->right = NULL;
+            free_leaf_array(m_leaf_array, old_leaf_count);
+            m_leaf_array = new_leaf_array;
+            m_size--; // do not count virtual max key
+            m_head = m_head_leaf = new_leaf_array[0];
             m_tail_leaf = static_ln;
             from.m_head = from.m_head_leaf = from.m_tail_leaf;
             from.m_tail_leaf->count = 1;
@@ -1441,15 +1520,19 @@ private:
             from.m_size = 0;
         }
         else {
+            // TODO use vector and copy content to new_leaf_array at last
             short dyna_index = 0;
             short static_index = 0;
             short new_index = 0;
+            int new_leaf_index = 0;
+            int old_leaf_index = 0;
             m_size = 0;
 
             leaf_node *new_static_ln = allocate_leaf();
-            m_head = m_head_leaf = new_static_ln;
+            new_leaf_array[new_leaf_index++] = new_static_ln;
+            static_ln = m_leaf_array[old_leaf_index];
 
-            while (dyna_ln != NULL && static_ln != NULL) {
+            while (dyna_ln != NULL && old_leaf_index < old_leaf_count) {
                 short dyna_count = dyna_ln->count;
                 if (dyna_ln->right == NULL) {
                     dyna_count--;
@@ -1461,8 +1544,7 @@ private:
                 while (dyna_index < dyna_count && static_index < static_count) {
                     if (new_index == l_order) {
                         leaf_node *next_new_static_ln = allocate_leaf();
-                        new_static_ln->right = next_new_static_ln;
-                        next_new_static_ln->left = new_static_ln;
+                        new_leaf_array[new_leaf_index++] = next_new_static_ln;
                         new_static_ln->count = new_index;
                         new_static_ln = next_new_static_ln;
                         new_index = 0;
@@ -1490,7 +1572,7 @@ private:
                 }
                 new_static_ln->count = new_index;
                 if (dyna_index == dyna_count) {
-                    leaf_node *next_dyna_ln = dyna_ln->right;
+                    typename writable_type::leaf_node *next_dyna_ln = dyna_ln->right;
                     if (next_dyna_ln != NULL) {
                         from.free_node(dyna_ln);
                     }
@@ -1498,9 +1580,11 @@ private:
                     dyna_index = 0;
                 }
                 else if (static_index == static_count) {
-                    leaf_node *next_static_ln = static_ln->right;
                     free_node(static_ln);
-                    static_ln = next_static_ln;
+                    old_leaf_index++;
+                    if (old_leaf_index < old_leaf_count) {
+                        static_ln = m_leaf_array[old_leaf_index];
+                    }
                     static_index = 0;
                 }
             }
@@ -1510,8 +1594,7 @@ private:
                 while (dyna_index < dyna_count) {
                     if (new_index == l_order) {
                         leaf_node *next_new_static_ln = allocate_leaf();
-                        new_static_ln->right = next_new_static_ln;
-                        next_new_static_ln->left = new_static_ln;
+                        new_leaf_array[new_leaf_index++] = next_new_static_ln;
                         new_static_ln->count = new_index;
                         new_static_ln = next_new_static_ln;
                         new_index = 0;
@@ -1525,7 +1608,7 @@ private:
                 }
                 new_static_ln->count = new_index;
 
-                leaf_node *next_dyna_ln = dyna_ln->right;
+                typename writable_type::leaf_node *next_dyna_ln = dyna_ln->right;
                 if (next_dyna_ln != NULL) {
                     from.free_node(dyna_ln);
                 }
@@ -1533,20 +1616,19 @@ private:
                 dyna_index = 0;
             }
 
-            while (static_ln != NULL) {
+            while (old_leaf_index < old_leaf_count) {
                 short static_count = static_ln->count;
                 while (static_index < static_count) {
                     if (new_index == l_order) {
                         leaf_node *next_new_static_ln = allocate_leaf();
-                        new_static_ln->right = next_new_static_ln;
-                        next_new_static_ln->left = new_static_ln;
+                        new_leaf_array[new_leaf_index++] = next_new_static_ln;
                         new_static_ln->count = new_index;
                         new_static_ln = next_new_static_ln;
                         new_index = 0;
                         node_count++;
                     }
                     if (static_ln->data[static_index] == (data_type)0 &&
-                        ((static_index != static_count - 1) || (static_ln->right != NULL)))
+                        ((static_index != static_count - 1) || (old_leaf_index != old_leaf_count - 1)))
                     {
                         static_index++;
                     }
@@ -1560,16 +1642,20 @@ private:
                 }
                 new_static_ln->count = new_index;
 
-                leaf_node *next_static_ln = static_ln->right;
                 free_node(static_ln);
-                static_ln = next_static_ln;
+                old_leaf_index++;
+                if (old_leaf_index < old_leaf_count) {
+                    static_ln = m_leaf_array[old_leaf_index];
+                }
                 static_index = 0;
             }
 
+            free_leaf_array(m_leaf_array, old_leaf_count);
+            m_leaf_array = new_leaf_array;
             m_size--;
-            new_static_ln->right = NULL;
+            m_head = m_head_leaf = new_leaf_array[0];
             m_tail_leaf = new_static_ln;
-            m_leaf_count = node_count;
+            m_leaf_count = new_leaf_count;
             from.m_head = from.m_head_leaf = from.m_tail_leaf;
             from.m_tail_leaf->count = 1;
             from.m_tail_leaf->left = NULL;
@@ -1652,7 +1738,7 @@ public:
             return;
         }
 
-        while (!level_head->is_leaf) {
+        while (1 != level_head->is_leaf) {
             inner_node *tmp = static_cast<inner_node *>(level_head);
             while (tmp != NULL) {
                 os << "[";

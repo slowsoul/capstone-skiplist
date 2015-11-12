@@ -1647,7 +1647,7 @@ private:
     bool is_valid_iterator(iterator iter)
     {
         if (NULL == iter.currnode ||
-            (iter.currnode)->is_leaf == 0 ||
+            (iter.currnode)->is_leaf != 1 ||
             iter == end() ||
             iter.currindex < 0 ||
             iter.currindex >= (iter.currnode)->count) {
@@ -1659,7 +1659,7 @@ private:
     bool is_valid_reverse_iterator(reverse_iterator iter)
     {
         if (NULL == iter.currnode ||
-            (iter.currnode)->is_leaf == 0 ||
+            (iter.currnode)->is_leaf != 1 ||
             iter == rend() ||
             iter.currindex <= 0 ||
             iter.currindex > (iter.currnode)->count) {
@@ -1806,7 +1806,7 @@ private:
     // merge a normal skip list and rebuild a compact skip list
     void merge(self_type& from)
     {
-        if (m_size == 0 && from.m_size == 0) {
+        if (from.m_size == 0) {
             return;
         }
 
@@ -1817,6 +1817,7 @@ private:
         leaf_node *static_ln = m_head_leaf;
         size_t node_count = 1;
 
+        // rebuild leaf nodes
         // case 1: self is empty
         if (m_size == 0) {
             short count = 0;
