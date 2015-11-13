@@ -1,5 +1,5 @@
-#ifndef SKIPLIST_MAP_H_HEADER
-#define SKIPLIST_MAP_H_HEADER
+#ifndef SKIPLIST_MULTIMAP_H_HEADER
+#define SKIPLIST_MULTIMAP_H_HEADER
 
 #include <algorithm>
 #include <functional>
@@ -38,15 +38,15 @@ template <typename _Key, typename _Data,
           typename _Compare,
           typename _Traits,
           typename _Alloc>
-class skiplist_map_compact;
+class skiplist_multimap_compact;
 
 template <typename _Key, typename _Data,
           typename _Compare = std::less<_Key>,
           typename _Traits = skiplist_default_map_traits<_Key, _Data>,
           typename _Alloc = std::allocator<std::pair<_Key, _Data>>>
-class skiplist_map
+class skiplist_multimap
 {
-#define SL_FRIENDS friend class skiplist_map_compact<_Key, _Data, _Compare, _Traits, _Alloc>;
+#define SL_FRIENDS friend class skiplist_multimap_compact<_Key, _Data, _Compare, _Traits, _Alloc>;
 public:
     typedef _Key key_type;
     typedef _Data data_type;
@@ -56,7 +56,7 @@ public:
     SL_FRIENDS
 
 public:
-    typedef skiplist_map<key_type, data_type, key_compare, traits,
+    typedef skiplist_multimap<key_type, data_type, key_compare, traits,
                          allocator_type> self_type;
     typedef std::pair<key_type, data_type> value_type;
     typedef std::pair<key_type, data_type> pair_type;
@@ -100,9 +100,9 @@ public:
 
     class iterator {
     public:
-        typedef typename skiplist_map::key_type key_type;
-        typedef typename skiplist_map::data_type data_type;
-        typedef typename skiplist_map::value_type value_type;
+        typedef typename skiplist_multimap::key_type key_type;
+        typedef typename skiplist_multimap::data_type data_type;
+        typedef typename skiplist_multimap::value_type value_type;
         typedef value_type& reference;
         typedef value_type* pointer;
 
@@ -113,13 +113,13 @@ public:
         typedef ptrdiff_t difference_type;
 
     private:
-        typename skiplist_map::leaf_node *currnode;
+        typename skiplist_multimap::leaf_node *currnode;
         short currindex;
 
         friend class reverse_iterator;
         friend class const_iterator;
         friend class const_reverse_iterator;
-        friend class skiplist_map<key_type, data_type, key_compare, traits,
+        friend class skiplist_multimap<key_type, data_type, key_compare, traits,
                                   allocator_type>;
 
         mutable value_type temp_value;
@@ -130,7 +130,7 @@ public:
             : currnode(NULL), currindex(0)
         { }
 
-        inline iterator(typename skiplist_map::leaf_node *n, short index)
+        inline iterator(typename skiplist_multimap::leaf_node *n, short index)
             : currnode(n), currindex(index)
         { }
 
@@ -231,9 +231,9 @@ public:
 
     class const_iterator {
     public:
-        typedef typename skiplist_map::key_type key_type;
-        typedef typename skiplist_map::data_type data_type;
-        typedef typename skiplist_map::value_type value_type;
+        typedef typename skiplist_multimap::key_type key_type;
+        typedef typename skiplist_multimap::data_type data_type;
+        typedef typename skiplist_multimap::value_type value_type;
         typedef const value_type& reference;
         typedef const value_type* pointer;
 
@@ -244,7 +244,7 @@ public:
         typedef ptrdiff_t difference_type;
 
     private:
-        const typename skiplist_map::leaf_node *currnode;
+        const typename skiplist_multimap::leaf_node *currnode;
         short currindex;
 
         friend class const_reverse_iterator;
@@ -257,7 +257,7 @@ public:
             : currnode(NULL), currindex(0)
         { }
 
-        inline const_iterator(const typename skiplist_map::leaf_node *n, short index)
+        inline const_iterator(const typename skiplist_multimap::leaf_node *n, short index)
             : currnode(n), currindex(index)
         { }
 
@@ -368,9 +368,9 @@ public:
 
     class reverse_iterator {
     public:
-        typedef typename skiplist_map::key_type key_type;
-        typedef typename skiplist_map::data_type data_type;
-        typedef typename skiplist_map::value_type value_type;
+        typedef typename skiplist_multimap::key_type key_type;
+        typedef typename skiplist_multimap::data_type data_type;
+        typedef typename skiplist_multimap::value_type value_type;
         typedef value_type& reference;
         typedef value_type* pointer;
 
@@ -381,13 +381,13 @@ public:
         typedef ptrdiff_t difference_type;
 
     private:
-        typename skiplist_map::leaf_node *currnode;
+        typename skiplist_multimap::leaf_node *currnode;
         short currindex;
 
         friend class iterator;
         friend class const_iterator;
         friend class const_reverse_iterator;
-        friend class skiplist_map<key_type, data_type, key_compare, traits,
+        friend class skiplist_multimap<key_type, data_type, key_compare, traits,
                                   allocator_type>;
 
         mutable value_type temp_value;
@@ -398,7 +398,7 @@ public:
             : currnode(NULL), currindex(0)
         { }
 
-        inline reverse_iterator(typename skiplist_map::leaf_node *n, short index)
+        inline reverse_iterator(typename skiplist_multimap::leaf_node *n, short index)
             : currnode(n), currindex(index)
         { }
 
@@ -509,9 +509,9 @@ public:
 
     class const_reverse_iterator {
     public:
-        typedef typename skiplist_map::key_type key_type;
-        typedef typename skiplist_map::data_type data_type;
-        typedef typename skiplist_map::value_type value_type;
+        typedef typename skiplist_multimap::key_type key_type;
+        typedef typename skiplist_multimap::data_type data_type;
+        typedef typename skiplist_multimap::value_type value_type;
         typedef value_type& reference;
         typedef value_type* pointer;
 
@@ -522,7 +522,7 @@ public:
         typedef ptrdiff_t difference_type;
 
     private:
-        const typename skiplist_map::leaf_node *currnode;
+        const typename skiplist_multimap::leaf_node *currnode;
         short currindex;
 
         friend class const_iterator;
@@ -535,7 +535,7 @@ public:
             : currnode(NULL), currindex(0)
         { }
 
-        inline const_reverse_iterator(typename skiplist_map::leaf_node *n, short index)
+        inline const_reverse_iterator(typename skiplist_multimap::leaf_node *n, short index)
             : currnode(n), currindex(index)
         { }
 
@@ -676,7 +676,7 @@ private:
     typename leaf_node::alloc_type m_leaf_allocator;
 
 public:
-    explicit inline skiplist_map(const allocator_type& alloc = allocator_type())
+    explicit inline skiplist_multimap(const allocator_type& alloc = allocator_type())
     {
         m_allocator = alloc;
         m_inner_allocator = m_allocator;
@@ -691,7 +691,7 @@ public:
         l_head->data[0] = data_type();
     }
 
-    explicit inline skiplist_map(const key_compare& kcf,
+    explicit inline skiplist_multimap(const key_compare& kcf,
                                  const allocator_type& alloc = allocator_type())
     {
         m_key_less = kcf;
@@ -708,7 +708,7 @@ public:
         l_head->data[0] = data_type();
     }
 
-    inline ~skiplist_map()
+    inline ~skiplist_multimap()
     {
         clear_all();
     }
@@ -738,7 +738,7 @@ public:
         { }
 
         /// Friendly to the skip list class so it may call the constructor
-        friend class skiplist_map<key_type, data_type, key_compare, traits,
+        friend class skiplist_multimap<key_type, data_type, key_compare, traits,
                                   allocator_type>;
 
     public:
@@ -1296,6 +1296,16 @@ public:
         return const_iterator(ln, i);
     }
 
+    inline std::pair<iterator, iterator> equal_range(const key_type& key)
+    {
+        return std::pair<iterator, iterator>(lower_bound(key), upper_bound(key));
+    }
+
+    inline std::pair<const_iterator, const_iterator> equal_range(const key_type& key) const
+    {
+        return std::pair<const_iterator, const_iterator>(lower_bound(key), upper_bound(key));
+    }
+
 public:
     // *** Skiplist Object Comparison Functions
 
@@ -1317,7 +1327,7 @@ public:
 
     }
 
-    inline skiplist_map(const skiplist_map& other) {
+    inline skiplist_multimap(const skiplist_multimap& other) {
 
     }
     */
@@ -1333,12 +1343,6 @@ public:
     inline std::pair<iterator, bool> insert(const key_type& key, const data_type& data)
     {
         return insert_common(key, data);
-    }
-
-    inline data_type& operator [] (const key_type& key)
-    {
-        iterator i = insert_common(key, data_type()).first;
-        return i.data();
     }
 
 private:
@@ -1588,16 +1592,9 @@ private:
                     break;
                 }
             }
-            if (i != count && key_equal(key, ln->key[i])) {
-                return std::pair<iterator, bool>(iterator(ln, i), false);
-            }
         }
         else {
             for (i = 0; key_greater(key, ln->key[i]); i++);
-
-            if (key_equal(key, ln->key[i])) {
-                return std::pair<iterator, bool>(iterator(ln, i), false);
-            }
         }
 
         // add the new key and data
@@ -1767,7 +1764,7 @@ public:
     {
         size_type c = 0;
 
-        if (erase_one(key)) {
+        while (erase_one(key)) {
             c++;
         }
 
@@ -1777,263 +1774,14 @@ public:
     void erase(iterator iter)
     {
         if (is_valid_iterator(iter)) {
-            erase_one(iter.key());
+            // TODO need a erase_iter method
         }
     }
 
     void erase(reverse_iterator iter)
     {
         if (is_valid_reverse_iterator(iter)) {
-            erase_one(iter.key());
-        }
-    }
-
-private:
-    // for static stage skiplist, it is the only way to rebuild it
-    // merge a normal skip list and rebuild a compact skip list
-    void merge(self_type& from)
-    {
-        if (from.m_size == 0) {
-            return;
-        }
-
-        clear_inner();
-        from.clear_inner();
-
-        leaf_node *dyna_ln = from.m_head_leaf;
-        leaf_node *static_ln = m_head_leaf;
-        size_t node_count = 1;
-
-        // rebuild leaf nodes
-        // case 1: self is empty
-        if (m_size == 0) {
-            short count = 0;
-            static_ln->count = 0;
-            while (dyna_ln != NULL) {
-                for (short i = 0; i < dyna_ln->count; i++) {
-                    if (count == l_order) {
-                        leaf_node *new_static_ln = allocate_leaf();
-                        static_ln->right = new_static_ln;
-                        new_static_ln->left = static_ln;
-                        static_ln->count = count;
-                        static_ln = new_static_ln;
-                        count = 0;
-                        node_count++;
-                    }
-                    static_ln->key[count] = dyna_ln->key[i];
-                    static_ln->data[count] = dyna_ln->data[i];
-                    count++;
-                    m_size++;
-                }
-                static_ln->count = count;
-
-                leaf_node *next_dyna_ln = dyna_ln->right;
-                if (next_dyna_ln != NULL) {
-                    from.free_node(dyna_ln);
-                }
-                dyna_ln = next_dyna_ln;
-            }
-
-            // do not count virtual max key
-            m_size--;
-            static_ln->right = NULL;
-            m_tail_leaf = static_ln;
-            from.m_head = from.m_head_leaf = from.m_tail_leaf;
-            from.m_tail_leaf->count = 1;
-            from.m_tail_leaf->left = NULL;
-            from.m_tail_leaf->right = NULL;
-            from.m_size = 0;
-        }
-        else {
-            short dyna_index = 0;
-            short static_index = 0;
-            short new_index = 0;
-            m_size = 0;
-
-            leaf_node *new_static_ln = allocate_leaf();
-            m_head = m_head_leaf = new_static_ln;
-
-            while (dyna_ln != NULL && static_ln != NULL) {
-                short dyna_count = dyna_ln->count;
-                if (dyna_ln->right == NULL) {
-                    dyna_count--;
-                }
-                short static_count = static_ln->count;
-                if (static_ln->right == NULL) {
-                    static_count--;
-                }
-                while (dyna_index < dyna_count && static_index < static_count) {
-                    if (new_index == l_order) {
-                        leaf_node *next_new_static_ln = allocate_leaf();
-                        new_static_ln->right = next_new_static_ln;
-                        next_new_static_ln->left = new_static_ln;
-                        new_static_ln->count = new_index;
-                        new_static_ln = next_new_static_ln;
-                        new_index = 0;
-                        node_count++;
-                    }
-                    if (static_ln->data[static_index] == (data_type)0 ||
-                        key_equal(dyna_ln->key[dyna_index], static_ln->key[static_index]))
-                    {
-                        static_index++;
-                    }
-                    else if (key_less(dyna_ln->key[dyna_index], static_ln->key[static_index])) {
-                        new_static_ln->key[new_index] = dyna_ln->key[dyna_index];
-                        new_static_ln->data[new_index] = dyna_ln->data[dyna_index];
-                        new_index++;
-                        dyna_index++;
-                        m_size++;
-                    }
-                    else {
-                        new_static_ln->key[new_index] = static_ln->key[static_index];
-                        new_static_ln->data[new_index] = static_ln->data[static_index];
-                        new_index++;
-                        static_index++;
-                        m_size++;
-                    }
-                }
-                new_static_ln->count = new_index;
-                if (dyna_index == dyna_count) {
-                    leaf_node *next_dyna_ln = dyna_ln->right;
-                    if (next_dyna_ln != NULL) {
-                        from.free_node(dyna_ln);
-                    }
-                    dyna_ln = next_dyna_ln;
-                    dyna_index = 0;
-                }
-                else if (static_index == static_count) {
-                    leaf_node *next_static_ln = static_ln->right;
-                    free_node(static_ln);
-                    static_ln = next_static_ln;
-                    static_index = 0;
-                }
-            }
-
-            while (dyna_ln != NULL) {
-                short dyna_count = dyna_ln->count;
-                while (dyna_index < dyna_count) {
-                    if (new_index == l_order) {
-                        leaf_node *next_new_static_ln = allocate_leaf();
-                        new_static_ln->right = next_new_static_ln;
-                        next_new_static_ln->left = new_static_ln;
-                        new_static_ln->count = new_index;
-                        new_static_ln = next_new_static_ln;
-                        new_index = 0;
-                        node_count++;
-                    }
-                    new_static_ln->key[new_index] = dyna_ln->key[dyna_index];
-                    new_static_ln->data[new_index] = dyna_ln->data[dyna_index];
-                    new_index++;
-                    dyna_index++;
-                    m_size++;
-                }
-                new_static_ln->count = new_index;
-
-                leaf_node *next_dyna_ln = dyna_ln->right;
-                if (next_dyna_ln != NULL) {
-                    from.free_node(dyna_ln);
-                }
-                dyna_ln = next_dyna_ln;
-                dyna_index = 0;
-            }
-
-            while (static_ln != NULL) {
-                short static_count = static_ln->count;
-                while (static_index < static_count) {
-                    if (new_index == l_order) {
-                        leaf_node *next_new_static_ln = allocate_leaf();
-                        new_static_ln->right = next_new_static_ln;
-                        next_new_static_ln->left = new_static_ln;
-                        new_static_ln->count = new_index;
-                        new_static_ln = next_new_static_ln;
-                        new_index = 0;
-                        node_count++;
-                    }
-                    if (static_ln->data[static_index] == (data_type)0 &&
-                        ((static_index != static_count - 1) || (static_ln->right != NULL)))
-                    {
-                        static_index++;
-                    }
-                    else {
-                        new_static_ln->key[new_index] = static_ln->key[static_index];
-                        new_static_ln->data[new_index] = static_ln->data[static_index];
-                        new_index++;
-                        static_index++;
-                        m_size++;
-                    }
-                }
-                new_static_ln->count = new_index;
-
-                leaf_node *next_static_ln = static_ln->right;
-                free_node(static_ln);
-                static_ln = next_static_ln;
-                static_index = 0;
-            }
-
-            m_size--;
-            new_static_ln->right = NULL;
-            m_tail_leaf = new_static_ln;
-            m_leaf_count = node_count;
-            from.m_head = from.m_head_leaf = from.m_tail_leaf;
-            from.m_tail_leaf->count = 1;
-            from.m_tail_leaf->left = NULL;
-            from.m_tail_leaf->right = NULL;
-            from.m_size = 0;
-        }
-
-        // build inner nodes
-        m_level = 0;
-        if (node_count > 1) {
-            inner_node *head_inner;
-            static_ln = m_head_leaf;
-            inner_node *static_in = allocate_inner();
-            head_inner = static_in;
-            node_count = 1;
-            short inner_index = 0;
-            while (static_ln != NULL) {
-                if (inner_index == i_order) {
-                    inner_node *next_static_in = allocate_inner();
-                    static_in->right = next_static_in;
-                    static_in->count = inner_index;
-                    static_in = next_static_in;
-                    node_count++;
-                    inner_index = 0;
-                }
-                static_in->key[inner_index] = static_ln->key[static_ln->count - 1];
-                static_in->down[inner_index] = static_ln;
-                inner_index++;
-                static_ln = static_ln->right;
-            }
-            static_in->right = NULL;
-            static_in->count = inner_index;
-            m_level++;
-
-            while (node_count > 1) {
-                inner_node *static_in = head_inner;
-                inner_node *upper_static_in = allocate_inner();
-                head_inner = upper_static_in;
-                node_count = 1;
-                short inner_index = 0;
-                while (static_in != NULL) {
-                    if (inner_index == i_order) {
-                        inner_node *next_upper_static_in = allocate_inner();
-                        upper_static_in->right = next_upper_static_in;
-                        upper_static_in->count = inner_index;
-                        upper_static_in = next_upper_static_in;
-                        node_count++;
-                        inner_index = 0;
-                    }
-                    upper_static_in->key[inner_index] = static_in->key[static_in->count - 1];
-                    upper_static_in->down[inner_index] = static_in;
-                    inner_index++;
-                    static_in = static_in->right;
-                }
-                upper_static_in->right = NULL;
-                upper_static_in->count = inner_index;
-                m_level++;
-            }
-
-            m_head = head_inner;
+            // TODO need a erase_iter method
         }
     }
 

@@ -8,6 +8,7 @@
 #include <memory>
 #include <cstddef>
 #include <cassert>
+#include <vector>
 
 #ifdef SL_DEBUG
 
@@ -1475,6 +1476,7 @@ public:
         // rebuild leaf nodes
         // case 1: self is empty
         if (m_size == 0) {
+            free_leaf_array(m_leaf_array, old_leaf_count);
             new_leaf_count = from.m_leaf_count;
             leaf_node **new_leaf_array = allocate_leaf_array(new_leaf_count);
             m_leaf_count = 0;
@@ -1508,7 +1510,6 @@ public:
                 dyna_ln = next_dyna_ln;
             }
 
-            free_leaf_array(m_leaf_array, old_leaf_count);
             m_leaf_array = new_leaf_array;
             m_size--; // do not count virtual max key
             m_head = m_head_leaf = new_leaf_array[0];
@@ -1521,6 +1522,7 @@ public:
         }
         else {
             // TODO use vector and copy content to new_leaf_array at last
+            std::vector<leaf_node *> new_leaf_vector;
             short dyna_index = 0;
             short static_index = 0;
             short new_index = 0;
@@ -1529,7 +1531,7 @@ public:
             m_size = 0;
 
             leaf_node *new_static_ln = allocate_leaf();
-            new_leaf_array[new_leaf_index++] = new_static_ln;
+            new_leaf_vector.push_back(new_static_ln);
             static_ln = m_leaf_array[old_leaf_index];
 
             while (dyna_ln != NULL && old_leaf_index < old_leaf_count) {
@@ -1544,7 +1546,7 @@ public:
                 while (dyna_index < dyna_count && static_index < static_count) {
                     if (new_index == l_order) {
                         leaf_node *next_new_static_ln = allocate_leaf();
-                        new_leaf_array[new_leaf_index++] = next_new_static_ln;
+                        new_leaf_vector.push_back(next_new_static_ln);
                         new_static_ln->count = new_index;
                         new_static_ln = next_new_static_ln;
                         new_index = 0;
@@ -1594,7 +1596,7 @@ public:
                 while (dyna_index < dyna_count) {
                     if (new_index == l_order) {
                         leaf_node *next_new_static_ln = allocate_leaf();
-                        new_leaf_array[new_leaf_index++] = next_new_static_ln;
+                        new_leaf_vector.push_back(next_new_static_ln);
                         new_static_ln->count = new_index;
                         new_static_ln = next_new_static_ln;
                         new_index = 0;
@@ -1621,7 +1623,7 @@ public:
                 while (static_index < static_count) {
                     if (new_index == l_order) {
                         leaf_node *next_new_static_ln = allocate_leaf();
-                        new_leaf_array[new_leaf_index++] = next_new_static_ln;
+                        new_leaf_vector.push_back(next_new_static_ln);
                         new_static_ln->count = new_index;
                         new_static_ln = next_new_static_ln;
                         new_index = 0;

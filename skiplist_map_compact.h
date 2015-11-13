@@ -25,26 +25,24 @@ namespace cmu {
 template <typename _Key, typename _Data,
           typename _Compare = std::less<_Key>,
           typename _Traits = skiplist_default_map_traits<_Key, _Data>,
-          bool _Duplicates = false,
           typename _Alloc = std::allocator<std::pair<_Key, _Data>>>
 class skiplist_map_compact
 {
-private:
-    typedef skiplist_map<_Key, _Data, _Compare, _Traits,
-                    _Duplicates, _Alloc> sl_type;
-
 public:
     typedef _Key key_type;
     typedef _Data data_type;
     typedef _Compare key_compare;
     typedef _Traits traits;
-    static const bool allow_duplicates = _Duplicates;
     typedef _Alloc allocator_type;
-    typedef typename sl_type::value_type value_type;
-    typedef typename sl_type::pair_type pair_type;
+    typedef std::pair<key_type, data_type> value_type;
+    typedef std::pair<key_type, data_type> pair_type;
     typedef size_t size_type;
-    typedef skiplist_map_compact<_Key, _Data, _Compare, _Traits,
-                        _Duplicates, _Alloc> self_type;
+    typedef skiplist_map_compact<key_type, data_type, key_compare, traits,
+                                 allocator_type> self_type;
+
+private:
+    typedef skiplist_map<key_type, data_type, key_compare, traits,
+                         allocator_type> sl_type;
 
 public:
     class iterator;
@@ -75,8 +73,8 @@ public:
         friend class reverse_iterator;
         friend class const_iterator;
         friend class const_reverse_iterator;
-        friend class skiplist_map_compact<_Key, _Data, _Compare, _Traits,
-                             _Duplicates, _Alloc>;
+        friend class skiplist_map_compact<key_type, data_type, key_compare, traits,
+                                          allocator_type>;
 
         mutable value_type temp_value;
 
@@ -359,8 +357,8 @@ public:
         friend class iterator;
         friend class const_iterator;
         friend class const_reverse_iterator;
-        friend class skiplist_map_compact<_Key, _Data, _Compare, _Traits,
-                             _Duplicates, _Alloc>;
+        friend class skiplist_map_compact<key_type, data_type, key_compare, traits,
+                                          allocator_type>;
 
         mutable value_type temp_value;
 
@@ -707,7 +705,7 @@ public:
 
         /// Friendly to the skip list class so it may call the constructor
         friend class skiplist_map_compact<key_type, data_type, key_compare, traits,
-                                        allow_duplicates, allocator_type>;
+                                          allocator_type>;
 
     public:
         /// Function call "less"-operator resulting in true if x < y.
