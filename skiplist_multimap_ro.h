@@ -1557,25 +1557,38 @@ private:
                 dyna_ln = next_dyna_ln;
             }
 
+            // add the last key, possibly allocate one more leaf node
+            if (count == l_order) {
+                leaf_node *new_static_ln = allocate_leaf();
+                static_ln->right = new_static_ln;
+                new_static_ln->left = static_ln;
+                static_ln->count = count;
+                static_ln = new_static_ln;
+                count = 0;
+                node_count++;
+            }
+
             // allocate data array for the last key
             static_ln->key[count] = cur_key;
             static_ln->data_array[count] = allocate_data_array(data_count);
             memcpy(static_ln->data_array[count], data_buf, data_count * sizeof(data_type));
             static_ln->data_count[count] = data_count;
-            static_ln->count++;
+            count++;
 
             // add the virtual max key, possibly allocate one more leaf node
-            if (static_ln->count == l_order) {
+            if (count == l_order) {
                 leaf_node *new_static_ln = allocate_leaf();
                 static_ln->right = new_static_ln;
                 new_static_ln->left = static_ln;
+                static_ln->count = count;
                 static_ln = new_static_ln;
-                static_ln->count = 1;
+                count = 0;
                 node_count++;
             }
-            else {
-                static_ln->count++;
-            }
+
+            // record the virtual max key
+            count++;
+            static_ln->count = count;
 
             static_ln->right = NULL;
             m_tail_leaf = static_ln;
@@ -1763,25 +1776,38 @@ private:
                 static_index = 0;
             }
 
+            // add the last key, possibly allocate one more leaf node
+            if (new_index == l_order) {
+                leaf_node *next_new_static_ln = allocate_leaf();
+                new_static_ln->right = next_new_static_ln;
+                next_new_static_ln->left = new_static_ln;
+                new_static_ln->count = new_index;
+                new_static_ln = next_new_static_ln;
+                new_index = 0;
+                node_count++;
+            }
+
             // allocate data array for the last key
             new_static_ln->key[new_index] = cur_key;
             new_static_ln->data_array[new_index] = allocate_data_array(data_count);
             memcpy(new_static_ln->data_array[new_index], data_buf, data_count * sizeof(data_type));
             new_static_ln->data_count[new_index] = data_count;
-            new_static_ln->count++;
+            new_index++;
 
             // add the virtual max key, possibly allocate one more leaf node
-            if (new_static_ln->count == l_order) {
+            if (new_index == l_order) {
                 leaf_node *next_new_static_ln = allocate_leaf();
                 new_static_ln->right = next_new_static_ln;
                 next_new_static_ln->left = new_static_ln;
+                new_static_ln->count = new_index;
                 new_static_ln = next_new_static_ln;
-                new_static_ln->count = 1;
+                new_index = 0;
                 node_count++;
             }
-            else {
-                new_static_ln->count++;
-            }
+
+            // record the virtual max key
+            new_index++;
+            new_static_ln->count = new_index;
 
             new_static_ln->right = NULL;
             m_tail_leaf = new_static_ln;
