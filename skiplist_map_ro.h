@@ -1475,6 +1475,7 @@ public:
 
         // rebuild leaf nodes
         // case 1: self is empty
+        // TODO reuse head leaf
         if (m_size == 0) {
             free_leaf_array(m_leaf_array, old_leaf_count);
             new_leaf_count = from.m_leaf_count;

@@ -17,6 +17,9 @@ sl_compact_test.o: sl_compact_test.cc skiplist_map.h skiplist_map_compact.h skip
 sl_compact_merge_test.o: sl_compact_merge_test.cc skiplist_map.h skiplist_map_compact.h skiplist_traits.h
 	$(CXX) $(CFLAGS) -c -o $@ $<
 
+sl_multimap_compact_merge_test.o: sl_multimap_compact_merge_test.cc skiplist_multimap.h skiplist_multimap_ro.h skiplist_traits.h
+	$(CXX) $(CFLAGS) -c -o $@ $<
+
 slp_test.o: slp_test.cc slp.h
 	$(CXX) $(CFLAGS) -c -o $@ $<
 
@@ -35,6 +38,9 @@ sl_compact_test: sl_compact_test.o
 sl_compact_merge_test: sl_compact_merge_test.o
 	$(CXX) $(CFLAGS) -o $@ $< $(MEMMGR) -lpthread -lm
 
+sl_multimap_compact_merge_test: sl_multimap_compact_merge_test.o
+	$(CXX) $(CFLAGS) -o $@ $< $(MEMMGR) -lpthread -lm
+
 slp_test: slp_test.o
 	$(CXX) $(CFLAGS) -o $@ $< $(MEMMGR) -lpthread -lm
 
@@ -42,4 +48,4 @@ bloomfilter_test: bloomfilter_test.o
 	$(CXX) $(CFLAGS) -o $@ $< $(MEMMGR) -lpthread -lm
 
 clean:
-	rm *.o sl_test sl_multimap_test sl_compact_test sl_compact_merge_test slp_test bloomfilter_test
+	rm *.o sl_test sl_multimap_test sl_compact_test sl_compact_merge_test sl_multimap_compact_merge_test slp_test bloomfilter_test

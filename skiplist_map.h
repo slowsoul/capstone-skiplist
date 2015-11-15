@@ -366,6 +366,7 @@ public:
         }
     };
 
+    // TODO rewrite reverse iterators and end() and consequently normal iterator
     class reverse_iterator {
     public:
         typedef typename skiplist_map::key_type key_type;
