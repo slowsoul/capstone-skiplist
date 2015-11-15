@@ -1491,8 +1491,7 @@ public:
     }
     */
 
-// TODO private:
-public:
+private:
     // for static stage skiplist, it is the only way to rebuild it
     // merge a normal skip list and rebuild a compact skip list
     void merge(writable_type& from)

@@ -1141,11 +1141,13 @@ public:
 
 public:
     // NOTE dev-only, to simulate structure after merge
+    /*
     inline std::pair<iterator, bool> insert_static(const key_type& key, const data_type& data)
     {
         // stub, since only need bool here
         return std::pair<iterator, bool>(end(), (static_sl->insert(key, data)).second);
     }
+    */
 
     // *** Public Insertion Functions
 

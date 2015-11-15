@@ -106,12 +106,6 @@ public:
             //SL_PRINT((in_dyna ? "d" : "s") << " " << d_iter.key() << " " << s_iter.key());
             if (in_dyna) {
                 ++d_iter;
-                if (!isEnd(d_iter) && !isEnd(s_iter) &&
-                    !key_less(d_iter.key(), s_iter.key()) &&
-                    !key_less(s_iter.key(), d_iter.key()))
-                {
-                    ++s_iter;
-                }
                 while (!isEnd(s_iter) && s_iter.data() == (data_type)0) {
                     ++s_iter;
                 }
@@ -252,12 +246,6 @@ public:
             //SL_PRINT((in_dyna ? "d" : "s") << " " << d_iter.key() << " " << s_iter.key());
             if (in_dyna) {
                 ++d_iter;
-                if (!isEnd(d_iter) && !isEnd(s_iter) &&
-                    !key_less(d_iter.key(), s_iter.key()) &&
-                    !key_less(s_iter.key(), d_iter.key()))
-                {
-                    ++s_iter;
-                }
                 while (!isEnd(s_iter) && s_iter.data() == (data_type)0) {
                     ++s_iter;
                 }
@@ -1124,12 +1112,32 @@ public:
 
     std::pair<iterator, iterator> equal_range(const key_type& key)
     {
-        // TODO
+        if (USE_BLOOM_FILTER) {
+            if (dyna_sl->size() == 0 || !bf.key_may_match(reinterpret_cast<const char*>(&key), sizeof(key_type))) {
+                SL_PRINT("equal_range shortcut");
+                // NOTE result iterator is not valid, they can be only used in this range
+                return std::pair<iterator, iterator>(
+                    iterator(false, dyna_sl->end(), static_sl->lower_bound(key), m_key_less),
+                    iterator(false, dyna_sl->end(), static_sl->upper_bound(key), m_key_less));
+            }
+        }
+
+        return std::pair<iterator, iterator>(lower_bound(key), upper_bound(key));
     }
 
     std::pair<const_iterator, const_iterator> equal_range(const key_type& key) const
     {
-        // TODO
+        if (USE_BLOOM_FILTER) {
+            if (dyna_sl->size() == 0 || !bf.key_may_match(reinterpret_cast<const char*>(&key), sizeof(key_type))) {
+                SL_PRINT("equal_range shortcut");
+                // NOTE result iterator is not valid, they can be only used in this range
+                return std::pair<const_iterator, const_iterator>(
+                    const_iterator(false, dyna_sl->end(), static_sl->lower_bound(key), m_key_less),
+                    const_iterator(false, dyna_sl->end(), static_sl->upper_bound(key), m_key_less));
+            }
+        }
+
+        return std::pair<const_iterator, const_iterator>(lower_bound(key), upper_bound(key));
     }
 
 public:
@@ -1245,7 +1253,6 @@ public:
         // TODO
     }
 
-// NOTE dev-only
 private:
     void merge_dtos()
     {
