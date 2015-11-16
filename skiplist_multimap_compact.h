@@ -1253,7 +1253,7 @@ public:
         // TODO
     }
 
-private:
+public:
     void merge_dtos()
     {
         static_sl->merge(*dyna_sl);
