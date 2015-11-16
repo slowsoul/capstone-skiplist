@@ -1534,7 +1534,7 @@ private:
                         node_count++;
                     }
 
-                    if (cur_key != dyna_ln->key[i]) {
+                    if (!key_equal(cur_key, dyna_ln->key[i])) {
                         static_ln->key[count] = cur_key;
                         static_ln->data_array[count] = allocate_data_array(data_count);
                         memcpy(static_ln->data_array[count], data_buf, data_count * sizeof(data_type));
@@ -1631,7 +1631,7 @@ private:
                     }
 
                     if (key_lessequal(dyna_ln->key[dyna_index], static_ln->key[static_index])) {
-                        if (cur_key != dyna_ln->key[dyna_index]) {
+                        if (!key_equal(cur_key, dyna_ln->key[dyna_index])) {
                             new_static_ln->key[new_index] = cur_key;
                             new_static_ln->data_array[new_index] = allocate_data_array(data_count);
                             memcpy(new_static_ln->data_array[new_index], data_buf, data_count * sizeof(data_type));
@@ -1647,7 +1647,7 @@ private:
                         m_size++;
                     }
                     else {
-                        if (cur_key != static_ln->key[static_index]) {
+                        if (!key_equal(cur_key, static_ln->key[static_index])) {
                             new_static_ln->key[new_index] = cur_key;
                             new_static_ln->data_array[new_index] = allocate_data_array(data_count);
                             memcpy(new_static_ln->data_array[new_index], data_buf, data_count * sizeof(data_type));
@@ -1704,7 +1704,7 @@ private:
                         node_count++;
                     }
 
-                    if (cur_key != dyna_ln->key[dyna_index]) {
+                    if (!key_equal(cur_key, dyna_ln->key[dyna_index])) {
                         new_static_ln->key[new_index] = cur_key;
                         new_static_ln->data_array[new_index] = allocate_data_array(data_count);
                         memcpy(new_static_ln->data_array[new_index], data_buf, data_count * sizeof(data_type));
@@ -1745,7 +1745,7 @@ private:
                         node_count++;
                     }
 
-                    if (cur_key != static_ln->key[static_index]) {
+                    if (!key_equal(cur_key, static_ln->key[static_index])) {
                         new_static_ln->key[new_index] = cur_key;
                         new_static_ln->data_array[new_index] = allocate_data_array(data_count);
                         memcpy(new_static_ln->data_array[new_index], data_buf, data_count * sizeof(data_type));
