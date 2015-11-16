@@ -1022,7 +1022,10 @@ public:
 
     bool exists(const key_type& key) const
     {
-        if (m_head_leaf->count > 1 && key_less(key, m_head_leaf->key[0])) {
+        if (m_size == 0) {
+            return false;
+        }
+        if (key_less(key, m_head_leaf->key[0])) {
             return false;
         }
         if (m_tail_leaf->count > 1) {
@@ -1059,7 +1062,10 @@ public:
 
     iterator find(const key_type& key)
     {
-        if (m_head_leaf->count > 1 && key_less(key, m_head_leaf->key[0])) {
+        if (m_size == 0) {
+            return end();
+        }
+        if (key_less(key, m_head_leaf->key[0])) {
             return end();
         }
         if (m_tail_leaf->count > 1) {
@@ -1096,7 +1102,10 @@ public:
 
     const_iterator find(const key_type& key) const
     {
-        if (m_head_leaf->count > 1 && key_less(key, m_head_leaf->key[0])) {
+        if (m_size == 0) {
+            return end();
+        }
+        if (key_less(key, m_head_leaf->key[0])) {
             return end();
         }
         if (m_tail_leaf->count > 1) {
@@ -1133,7 +1142,10 @@ public:
 
     size_type count(const key_type& key) const
     {
-        if (m_head_leaf->count > 1 && key_less(key, m_head_leaf->key[0])) {
+        if (m_size == 0) {
+            return 0;
+        }
+        if (key_less(key, m_head_leaf->key[0])) {
             return 0;
         }
         if (m_tail_leaf->count > 1) {
@@ -1170,6 +1182,9 @@ public:
 
     iterator lower_bound(const key_type& key)
     {
+        if (m_size == 0) {
+            return end();
+        }
         if (m_tail_leaf->count > 1) {
             if (key_greater(key, m_tail_leaf->key[m_tail_leaf->count - 2])) {
                 return end();
@@ -1204,6 +1219,9 @@ public:
 
     const_iterator lower_bound(const key_type& key) const
     {
+        if (m_size == 0) {
+            return end();
+        }
         if (m_tail_leaf->count > 1) {
             if (key_greater(key, m_tail_leaf->key[m_tail_leaf->count - 2])) {
                 return end();
@@ -1238,6 +1256,9 @@ public:
 
     iterator upper_bound(const key_type& key)
     {
+        if (m_size == 0) {
+            return end();
+        }
         if (m_tail_leaf->count > 1) {
             if (key_greaterequal(key, m_tail_leaf->key[m_tail_leaf->count - 2])) {
                 return end();
@@ -1272,6 +1293,9 @@ public:
 
     const_iterator upper_bound(const key_type& key) const
     {
+        if (m_size == 0) {
+            return end();
+        }
         if (m_tail_leaf->count > 1) {
             if (key_greaterequal(key, m_tail_leaf->key[m_tail_leaf->count - 2])) {
                 return end();
