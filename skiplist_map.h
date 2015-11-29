@@ -163,10 +163,12 @@ public:
         inline iterator& operator ++ ()
         {
             if (currnode->right != NULL) {
-                ++currindex;
-                if (currindex == currnode->count) {
-                    currnode = currnode->right;
-                    currindex = 0;
+                if (currindex < currnode->count) {
+                    ++currindex;
+                    if (currindex == currnode->count && currnode->right->count != 1) {
+                        currnode = currnode->right;
+                        currindex = 0;
+                    }
                 }
             }
             else if (currindex < currnode->count - 1) {
@@ -180,10 +182,12 @@ public:
             iterator tmp = *this;
 
             if (currnode->right != NULL) {
-                ++currindex;
-                if (currindex == currnode->count) {
-                    currnode = currnode->right;
-                    currindex = 0;
+                if (currindex < currnode->count) {
+                    ++currindex;
+                    if (currindex == currnode->count && currnode->right->count != 1) {
+                        currnode = currnode->right;
+                        currindex = 0;
+                    }
                 }
             }
             else if (currindex < currnode->count - 1) {
@@ -298,10 +302,12 @@ public:
         inline const_iterator& operator ++ ()
         {
             if (currnode->right != NULL) {
-                ++currindex;
-                if (currindex == currnode->count) {
-                    currnode = currnode->right;
-                    currindex = 0;
+                if (currindex < currnode->count) {
+                    ++currindex;
+                    if (currindex == currnode->count && currnode->right->count != 1) {
+                        currnode = currnode->right;
+                        currindex = 0;
+                    }
                 }
             }
             else if (currindex < currnode->count - 1) {
@@ -315,10 +321,12 @@ public:
             const_iterator tmp = *this;
 
             if (currnode->right != NULL) {
-                ++currindex;
-                if (currindex == currnode->count) {
-                    currnode = currnode->right;
-                    currindex = 0;
+                if (currindex < currnode->count) {
+                    ++currindex;
+                    if (currindex == currnode->count && currnode->right->count != 1) {
+                        currnode = currnode->right;
+                        currindex = 0;
+                    }
                 }
             }
             else if (currindex < currnode->count - 1) {
@@ -366,7 +374,6 @@ public:
         }
     };
 
-    // TODO rewrite reverse iterators and end() and consequently normal iterator
     class reverse_iterator {
     public:
         typedef typename skiplist_map::key_type key_type;
@@ -468,13 +475,15 @@ public:
         inline reverse_iterator& operator -- ()
         {
             if (currnode->right != NULL) {
-                ++currindex;
-                if (currindex == currnode->count + 1) {
+                if (currindex < currnode->count) {
+                    ++currindex;
+                }
+                else if (currnode->right->count != 1) {
                     currnode = currnode->right;
                     currindex = 1;
                 }
             }
-            else if (currindex < currnode->count) {
+            else if (currindex < currnode->count - 1) {
                 ++currindex;
             }
             return *this;
@@ -485,13 +494,15 @@ public:
             reverse_iterator tmp = *this;
 
             if (currnode->right != NULL) {
-                ++currindex;
-                if (currindex == currnode->count + 1) {
+                if (currindex < currnode->count) {
+                    ++currindex;
+                }
+                else if (currnode->right->count != 1) {
                     currnode = currnode->right;
                     currindex = 1;
                 }
             }
-            else if (currindex < currnode->count) {
+            else if (currindex < currnode->count - 1) {
                 ++currindex;
             }
             return tmp;
@@ -613,13 +624,15 @@ public:
         inline const_reverse_iterator& operator -- ()
         {
             if (currnode->right != NULL) {
-                ++currindex;
-                if (currindex == currnode->count + 1) {
+                if (currindex < currnode->count) {
+                    ++currindex;
+                }
+                else if (currnode->right->count != 1) {
                     currnode = currnode->right;
                     currindex = 1;
                 }
             }
-            else if (currindex < currnode->count) {
+            else if (currindex < currnode->count - 1) {
                 ++currindex;
             }
             return *this;
@@ -630,13 +643,15 @@ public:
             const_reverse_iterator tmp = *this;
 
             if (currnode->right != NULL) {
-                ++currindex;
-                if (currindex == currnode->count + 1) {
+                if (currindex < currnode->count) {
+                    ++currindex;
+                }
+                else if (currnode->right->count != 1) {
                     currnode = currnode->right;
                     currindex = 1;
                 }
             }
-            else if (currindex < currnode->count) {
+            else if (currindex < currnode->count - 1) {
                 ++currindex;
             }
             return tmp;
@@ -944,6 +959,9 @@ public:
 
     inline iterator end()
     {
+        if (m_tail_leaf->count == 1 && m_tail_leaf->left != NULL) {
+            return iterator(m_tail_leaf->left, m_tail_leaf->left->count);
+        }
         return iterator(m_tail_leaf, m_tail_leaf->count - 1);
     }
 
@@ -954,6 +972,9 @@ public:
 
     inline const_iterator end() const
     {
+        if (m_tail_leaf->count == 1 && m_tail_leaf->left != NULL) {
+            return const_iterator(m_tail_leaf->left, m_tail_leaf->left->count);
+        }
         return const_iterator(m_tail_leaf, m_tail_leaf->count - 1);
     }
 
