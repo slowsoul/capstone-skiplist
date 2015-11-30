@@ -165,7 +165,9 @@ public:
             if (currnode->right != NULL) {
                 if (currindex < currnode->count) {
                     ++currindex;
-                    if (currindex == currnode->count && currnode->right->count != 1) {
+                    if (currindex == currnode->count &&
+                        (currnode->right->count != 1 || currnode->right->right != NULL))
+                    {
                         currnode = currnode->right;
                         currindex = 0;
                     }
@@ -184,7 +186,9 @@ public:
             if (currnode->right != NULL) {
                 if (currindex < currnode->count) {
                     ++currindex;
-                    if (currindex == currnode->count && currnode->right->count != 1) {
+                    if (currindex == currnode->count &&
+                        (currnode->right->count != 1 || currnode->right->right != NULL))
+                    {
                         currnode = currnode->right;
                         currindex = 0;
                     }
@@ -304,7 +308,9 @@ public:
             if (currnode->right != NULL) {
                 if (currindex < currnode->count) {
                     ++currindex;
-                    if (currindex == currnode->count && currnode->right->count != 1) {
+                    if (currindex == currnode->count &&
+                        (currnode->right->count != 1 || currnode->right->right != NULL))
+                    {
                         currnode = currnode->right;
                         currindex = 0;
                     }
@@ -323,7 +329,9 @@ public:
             if (currnode->right != NULL) {
                 if (currindex < currnode->count) {
                     ++currindex;
-                    if (currindex == currnode->count && currnode->right->count != 1) {
+                    if (currindex == currnode->count &&
+                        (currnode->right->count != 1 || currnode->right->right != NULL))
+                    {
                         currnode = currnode->right;
                         currindex = 0;
                     }
@@ -478,7 +486,9 @@ public:
                 if (currindex < currnode->count) {
                     ++currindex;
                 }
-                else if (currnode->right->count != 1) {
+                else if (currnode->right->count != 1 ||
+                         currnode->right->right != NULL)
+                {
                     currnode = currnode->right;
                     currindex = 1;
                 }
@@ -497,7 +507,9 @@ public:
                 if (currindex < currnode->count) {
                     ++currindex;
                 }
-                else if (currnode->right->count != 1) {
+                else if (currnode->right->count != 1 ||
+                         currnode->right->right != NULL)
+                {
                     currnode = currnode->right;
                     currindex = 1;
                 }
@@ -627,7 +639,9 @@ public:
                 if (currindex < currnode->count) {
                     ++currindex;
                 }
-                else if (currnode->right->count != 1) {
+                else if (currnode->right->count != 1 ||
+                         currnode->right->right != NULL)
+                {
                     currnode = currnode->right;
                     currindex = 1;
                 }
@@ -646,7 +660,9 @@ public:
                 if (currindex < currnode->count) {
                     ++currindex;
                 }
-                else if (currnode->right->count != 1) {
+                else if (currnode->right->count != 1 ||
+                         currnode->right->right != NULL)
+                {
                     currnode = currnode->right;
                     currindex = 1;
                 }

@@ -179,24 +179,35 @@ public:
         inline iterator& operator ++ ()
         {
             if (currnode->right != NULL) {
-                ++currdataindex;
-                if (currdataindex == currnode->data_count[currindex]) {
-                    currdataindex = 0;
-                    ++currindex;
-                    if (currindex == currnode->count) {
-                        currnode = currnode->right;
-                        currindex = 0;
+                if (currdataindex < currnode->data_count[currindex]) {
+                    ++currdataindex;
+                    if (currdataindex == currnode->data_count[currindex]) {
+                        if (currindex == currnode->count - 1) {
+                            if (currnode->right->count != 1 || currnode->right->right != NULL)
+                            {
+                                currnode = currnode->right;
+                                currindex = 0;
+                                currdataindex = 0;
+                            }
+                        }
+                        else {
+                            ++currindex;
+                            currdataindex = 0;
+                        }
                     }
                 }
             }
-            else if (currindex < currnode->count - 1) {
-                ++currdataindex;
-                if (currdataindex == currnode->data_count[currindex]) {
-                    currdataindex = 0;
-                    ++currindex;
+            else {
+                if (currdataindex < currnode->data_count[currindex]) {
+                    ++currdataindex;
+                    if (currdataindex == currnode->data_count[currindex]) {
+                        if (currindex < currnode->count - 2) {
+                            currdataindex = 0;
+                            ++currindex;
+                        }
+                    }
                 }
             }
-
             return *this;
         }
 
@@ -205,24 +216,35 @@ public:
             iterator tmp = *this;
 
             if (currnode->right != NULL) {
-                ++currdataindex;
-                if (currdataindex == currnode->data_count[currindex]) {
-                    currdataindex = 0;
-                    ++currindex;
-                    if (currindex == currnode->count) {
-                        currnode = currnode->right;
-                        currindex = 0;
+                if (currdataindex < currnode->data_count[currindex]) {
+                    ++currdataindex;
+                    if (currdataindex == currnode->data_count[currindex]) {
+                        if (currindex == currnode->count - 1) {
+                            if (currnode->right->count != 1 || currnode->right->right != NULL)
+                            {
+                                currnode = currnode->right;
+                                currindex = 0;
+                                currdataindex = 0;
+                            }
+                        }
+                        else {
+                            ++currindex;
+                            currdataindex = 0;
+                        }
                     }
                 }
             }
-            else if (currindex < currnode->count - 1) {
-                ++currdataindex;
-                if (currdataindex == currnode->data_count[currindex]) {
-                    currdataindex = 0;
-                    ++currindex;
+            else {
+                if (currdataindex < currnode->data_count[currindex]) {
+                    ++currdataindex;
+                    if (currdataindex == currnode->data_count[currindex]) {
+                        if (currindex < currnode->count - 2) {
+                            currdataindex = 0;
+                            ++currindex;
+                        }
+                    }
                 }
             }
-
             return tmp;
         }
 
@@ -240,7 +262,6 @@ public:
                 currindex = currnode->count - 1;
                 currdataindex = currnode->data_count[currindex] - 1;
             }
-
             return *this;
         }
 
@@ -260,7 +281,6 @@ public:
                 currindex = currnode->count - 1;
                 currdataindex = currnode->data_count[currindex] - 1;
             }
-
             return tmp;
         }
 
@@ -345,24 +365,35 @@ public:
         inline const_iterator& operator ++ ()
         {
             if (currnode->right != NULL) {
-                ++currdataindex;
-                if (currdataindex == currnode->data_count[currindex]) {
-                    currdataindex = 0;
-                    ++currindex;
-                    if (currindex == currnode->count) {
-                        currnode = currnode->right;
-                        currindex = 0;
+                if (currdataindex < currnode->data_count[currindex]) {
+                    ++currdataindex;
+                    if (currdataindex == currnode->data_count[currindex]) {
+                        if (currindex == currnode->count - 1) {
+                            if (currnode->right->count != 1 || currnode->right->right != NULL)
+                            {
+                                currnode = currnode->right;
+                                currindex = 0;
+                                currdataindex = 0;
+                            }
+                        }
+                        else {
+                            ++currindex;
+                            currdataindex = 0;
+                        }
                     }
                 }
             }
-            else if (currindex < currnode->count - 1) {
-                ++currdataindex;
-                if (currdataindex == currnode->data_count[currindex]) {
-                    currdataindex = 0;
-                    ++currindex;
+            else {
+                if (currdataindex < currnode->data_count[currindex]) {
+                    ++currdataindex;
+                    if (currdataindex == currnode->data_count[currindex]) {
+                        if (currindex < currnode->count - 2) {
+                            currdataindex = 0;
+                            ++currindex;
+                        }
+                    }
                 }
             }
-
             return *this;
         }
 
@@ -371,24 +402,35 @@ public:
             const_iterator tmp = *this;
 
             if (currnode->right != NULL) {
-                ++currdataindex;
-                if (currdataindex == currnode->data_count[currindex]) {
-                    currdataindex = 0;
-                    ++currindex;
-                    if (currindex == currnode->count) {
-                        currnode = currnode->right;
-                        currindex = 0;
+                if (currdataindex < currnode->data_count[currindex]) {
+                    ++currdataindex;
+                    if (currdataindex == currnode->data_count[currindex]) {
+                        if (currindex == currnode->count - 1) {
+                            if (currnode->right->count != 1 || currnode->right->right != NULL)
+                            {
+                                currnode = currnode->right;
+                                currindex = 0;
+                                currdataindex = 0;
+                            }
+                        }
+                        else {
+                            ++currindex;
+                            currdataindex = 0;
+                        }
                     }
                 }
             }
-            else if (currindex < currnode->count - 1) {
-                ++currdataindex;
-                if (currdataindex == currnode->data_count[currindex]) {
-                    currdataindex = 0;
-                    ++currindex;
+            else {
+                if (currdataindex < currnode->data_count[currindex]) {
+                    ++currdataindex;
+                    if (currdataindex == currnode->data_count[currindex]) {
+                        if (currindex < currnode->count - 2) {
+                            currdataindex = 0;
+                            ++currindex;
+                        }
+                    }
                 }
             }
-
             return tmp;
         }
 
@@ -406,7 +448,6 @@ public:
                 currindex = currnode->count - 1;
                 currdataindex = currnode->data_count[currindex] - 1;
             }
-
             return *this;
         }
 
@@ -426,7 +467,6 @@ public:
                 currindex = currnode->count - 1;
                 currdataindex = currnode->data_count[currindex] - 1;
             }
-
             return tmp;
         }
 
@@ -441,7 +481,6 @@ public:
         }
     };
 
-    // TODO rewrite reverse iterators and end() and consequently normal iterator
     class reverse_iterator {
     public:
         typedef typename skiplist_multimap_ro::key_type key_type;
@@ -485,41 +524,46 @@ public:
 
         inline reference operator * () const
         {
-            SL_ASSERT(currindex > 0);
+            SL_ASSERT(currdataindex > 0);
             temp_value = value_type(key(), data());
             return temp_value;
         }
 
         inline pointer operator -> () const
         {
-            SL_ASSERT(currindex > 0);
+            SL_ASSERT(currdataindex > 0);
             temp_value = value_type(key(), data());
             return &temp_value;
         }
 
         inline const key_type & key() const
         {
-            SL_ASSERT(currindex > 0);
-            return currnode->key[currindex - 1];
+            SL_ASSERT(currdataindex > 0);
+            return currnode->key[currindex];
         }
 
         inline data_type & data() const
         {
-            SL_ASSERT(currindex > 0);
-            return currnode->data_array[currindex - 1][currdataindex - 1];
+            SL_ASSERT(currdataindex > 0);
+            return currnode->data_array[currindex][currdataindex - 1];
         }
 
         inline reverse_iterator& operator ++ ()
         {
-            if (currindex > 1) {
+            if (currdataindex > 1) {
+                --currdataindex;
+            }
+            else if (currindex > 0) {
                 --currindex;
+                currdataindex = currnode->data_count[currindex];
             }
             else if (currnode->left != NULL) {
                 currnode = currnode->left;
-                currindex = currnode->count;
+                currindex = currnode->count - 1;
+                currdataindex = currnode->data_count[currindex];
             }
             else {
-                currindex = 0;
+                currdataindex = 0;
             }
             return *this;
         }
@@ -528,15 +572,20 @@ public:
         {
             reverse_iterator tmp = *this;
 
-            if (currindex > 1) {
+            if (currdataindex > 1) {
+                --currdataindex;
+            }
+            else if (currindex > 0) {
                 --currindex;
+                currdataindex = currnode->data_count[currindex];
             }
             else if (currnode->left != NULL) {
                 currnode = currnode->left;
-                currindex = currnode->count;
+                currindex = currnode->count - 1;
+                currdataindex = currnode->data_count[currindex];
             }
             else {
-                currindex = 0;
+                currdataindex = 0;
             }
             return tmp;
         }
@@ -544,14 +593,34 @@ public:
         inline reverse_iterator& operator -- ()
         {
             if (currnode->right != NULL) {
-                ++currindex;
-                if (currindex == currnode->count + 1) {
-                    currnode = currnode->right;
-                    currindex = 1;
+                if (currdataindex < currnode->data_count[currindex]) {
+                    ++currdataindex;
+                }
+                else {
+                    if (currindex == currnode->count - 1) {
+                        if (currnode->right->count != 1 || currnode->right->right != NULL)
+                        {
+                            currnode = currnode->right;
+                            currindex = 0;
+                            currdataindex = 1;
+                        }
+                    }
+                    else {
+                        ++currindex;
+                        currdataindex = 1;
+                    }
                 }
             }
-            else if (currindex < currnode->count) {
-                ++currindex;
+            else {
+                if (currdataindex < currnode->data_count[currindex]) {
+                    ++currdataindex;
+                    if (currdataindex == currnode->data_count[currindex]) {
+                        if (currindex < currnode->count - 2) {
+                            currdataindex = 0;
+                            ++currindex;
+                        }
+                    }
+                }
             }
             return *this;
         }
@@ -561,14 +630,34 @@ public:
             reverse_iterator tmp = *this;
 
             if (currnode->right != NULL) {
-                ++currindex;
-                if (currindex == currnode->count + 1) {
-                    currnode = currnode->right;
-                    currindex = 1;
+                if (currdataindex < currnode->data_count[currindex]) {
+                    ++currdataindex;
+                }
+                else {
+                    if (currindex == currnode->count - 1) {
+                        if (currnode->right->count != 1 || currnode->right->right != NULL)
+                        {
+                            currnode = currnode->right;
+                            currindex = 0;
+                            currdataindex = 1;
+                        }
+                    }
+                    else {
+                        ++currindex;
+                        currdataindex = 1;
+                    }
                 }
             }
-            else if (currindex < currnode->count) {
-                ++currindex;
+            else {
+                if (currdataindex < currnode->data_count[currindex]) {
+                    ++currdataindex;
+                    if (currdataindex == currnode->data_count[currindex]) {
+                        if (currindex < currnode->count - 2) {
+                            currdataindex = 0;
+                            ++currindex;
+                        }
+                    }
+                }
             }
             return tmp;
         }
@@ -631,41 +720,46 @@ public:
 
         inline reference operator * () const
         {
-            SL_ASSERT(currindex > 0);
+            SL_ASSERT(currdataindex > 0);
             temp_value = value_type(key(), data());
             return temp_value;
         }
 
         inline pointer operator -> () const
         {
-            SL_ASSERT(currindex > 0);
+            SL_ASSERT(currdataindex > 0);
             temp_value = value_type(key(), data());
             return &temp_value;
         }
 
         inline const key_type & key() const
         {
-            SL_ASSERT(currindex > 0);
-            return currnode->key[currindex - 1];
+            SL_ASSERT(currdataindex > 0);
+            return currnode->key[currindex];
         }
 
         inline const data_type & data() const
         {
-            SL_ASSERT(currindex > 0);
-            return currnode->data_array[currindex - 1][currdataindex - 1];
+            SL_ASSERT(currdataindex > 0);
+            return currnode->data_array[currindex][currdataindex - 1];
         }
 
         inline const_reverse_iterator& operator ++ ()
         {
-            if (currindex > 1) {
+            if (currdataindex > 1) {
+                --currdataindex;
+            }
+            else if (currindex > 0) {
                 --currindex;
+                currdataindex = currnode->data_count[currindex];
             }
             else if (currnode->left != NULL) {
                 currnode = currnode->left;
-                currindex = currnode->count;
+                currindex = currnode->count - 1;
+                currdataindex = currnode->data_count[currindex];
             }
             else {
-                currindex = 0;
+                currdataindex = 0;
             }
             return *this;
         }
@@ -674,15 +768,20 @@ public:
         {
             const_reverse_iterator tmp = *this;
 
-            if (currindex > 1) {
+            if (currdataindex > 1) {
+                --currdataindex;
+            }
+            else if (currindex > 0) {
                 --currindex;
+                currdataindex = currnode->data_count[currindex];
             }
             else if (currnode->left != NULL) {
                 currnode = currnode->left;
-                currindex = currnode->count;
+                currindex = currnode->count - 1;
+                currdataindex = currnode->data_count[currindex];
             }
             else {
-                currindex = 0;
+                currdataindex = 0;
             }
             return tmp;
         }
@@ -690,14 +789,34 @@ public:
         inline const_reverse_iterator& operator -- ()
         {
             if (currnode->right != NULL) {
-                ++currindex;
-                if (currindex == currnode->count + 1) {
-                    currnode = currnode->right;
-                    currindex = 1;
+                if (currdataindex < currnode->data_count[currindex]) {
+                    ++currdataindex;
+                }
+                else {
+                    if (currindex == currnode->count - 1) {
+                        if (currnode->right->count != 1 || currnode->right->right != NULL)
+                        {
+                            currnode = currnode->right;
+                            currindex = 0;
+                            currdataindex = 1;
+                        }
+                    }
+                    else {
+                        ++currindex;
+                        currdataindex = 1;
+                    }
                 }
             }
-            else if (currindex < currnode->count) {
-                ++currindex;
+            else {
+                if (currdataindex < currnode->data_count[currindex]) {
+                    ++currdataindex;
+                    if (currdataindex == currnode->data_count[currindex]) {
+                        if (currindex < currnode->count - 2) {
+                            currdataindex = 0;
+                            ++currindex;
+                        }
+                    }
+                }
             }
             return *this;
         }
@@ -707,14 +826,34 @@ public:
             const_reverse_iterator tmp = *this;
 
             if (currnode->right != NULL) {
-                ++currindex;
-                if (currindex == currnode->count + 1) {
-                    currnode = currnode->right;
-                    currindex = 1;
+                if (currdataindex < currnode->data_count[currindex]) {
+                    ++currdataindex;
+                }
+                else {
+                    if (currindex == currnode->count - 1) {
+                        if (currnode->right->count != 1 || currnode->right->right != NULL)
+                        {
+                            currnode = currnode->right;
+                            currindex = 0;
+                            currdataindex = 1;
+                        }
+                    }
+                    else {
+                        ++currindex;
+                        currdataindex = 1;
+                    }
                 }
             }
-            else if (currindex < currnode->count) {
-                ++currindex;
+            else {
+                if (currdataindex < currnode->data_count[currindex]) {
+                    ++currdataindex;
+                    if (currdataindex == currnode->data_count[currindex]) {
+                        if (currindex < currnode->count - 2) {
+                            currdataindex = 0;
+                            ++currindex;
+                        }
+                    }
+                }
             }
             return tmp;
         }
@@ -1041,7 +1180,14 @@ public:
 
     inline iterator end()
     {
-        return iterator(m_tail_leaf, m_tail_leaf->count - 1, 0);
+        if (m_tail_leaf->count == 1 && m_tail_leaf->left != NULL) {
+            return iterator(m_tail_leaf->left,
+                            m_tail_leaf->left->count - 1,
+                            m_tail_leaf->left->data_count[m_tail_leaf->left->count - 1]);
+        }
+        return iterator(m_tail_leaf,
+                        m_tail_leaf->count - 2,
+                        m_tail_leaf->data_count[m_tail_leaf->count - 2]);
     }
 
     inline const_iterator begin() const
@@ -1051,7 +1197,14 @@ public:
 
     inline const_iterator end() const
     {
-        return const_iterator(m_tail_leaf, m_tail_leaf->count - 1, 0);
+        if (m_tail_leaf->count == 1 && m_tail_leaf->left != NULL) {
+            return const_iterator(m_tail_leaf->left,
+                                  m_tail_leaf->left->count - 1,
+                                  m_tail_leaf->left->data_count[m_tail_leaf->left->count - 1]);
+        }
+        return const_iterator(m_tail_leaf,
+                              m_tail_leaf->count - 2,
+                              m_tail_leaf->data_count[m_tail_leaf->count - 2]);
     }
 
     inline reverse_iterator rbegin()
@@ -1491,7 +1644,8 @@ public:
     }
     */
 
-private:
+//private:
+public:
     // for static stage skiplist, it is the only way to rebuild it
     // merge a normal skip list and rebuild a compact skip list
     void merge(writable_type& from)
