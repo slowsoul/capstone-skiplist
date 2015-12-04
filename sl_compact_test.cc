@@ -3,7 +3,7 @@
 int main() {
     typedef cmu::skiplist_map_compact<uint64_t, uint64_t> SkiplistType;
     SkiplistType slmap;
-    SkiplistType::const_iterator slmap_keyIter;
+    SkiplistType::const_iterator slmap_keyIter, tmp_keyIter;
     SkiplistType::const_reverse_iterator slmap_rev_keyIter;
 
     // insert test
@@ -18,6 +18,16 @@ int main() {
             retval = slmap.insert_static(i*2, i*2+1);
             assert(retval.second == true);
         }
+    }
+
+    std::cout << "initial: iterator: " << std::endl;
+    for (slmap_keyIter = slmap.begin();slmap_keyIter != slmap.end();++slmap_keyIter) {
+        std::cout << slmap_keyIter.key() << ": " << slmap_keyIter.data() << std::endl;
+    }
+    std::cout << std::endl;
+    std::cout << "initial: reverse iterator: " << std::endl;
+    for (slmap_rev_keyIter = slmap.rbegin();slmap_rev_keyIter != slmap.rend();++slmap_rev_keyIter) {
+        std::cout << slmap_rev_keyIter.key() << ": " << slmap_rev_keyIter.data() << std::endl;
     }
 
     slmap.print(std::cout);
@@ -54,9 +64,25 @@ int main() {
     // find test
     slmap_keyIter = slmap.find(4);
     assert(slmap_keyIter != slmap.end());
+    assert(slmap_keyIter.is_incomplete());
+    tmp_keyIter = slmap.lower_bound(4);
+    slmap.make_found_iter_complete(slmap_keyIter);
+    assert(!slmap_keyIter.is_incomplete() && tmp_keyIter == slmap_keyIter);
+    std::cout << "completed lower_bound iterator: " << std::endl;
+    for (;slmap_keyIter != slmap.end();++slmap_keyIter) {
+        std::cout << slmap_keyIter.key() << ": " << slmap_keyIter.data() << std::endl;
+    }
 
     slmap_keyIter = slmap.find(14);
     assert(slmap_keyIter != slmap.end());
+    assert(slmap_keyIter.is_incomplete());
+    tmp_keyIter = slmap.lower_bound(14);
+    slmap.make_found_iter_complete(slmap_keyIter);
+    assert(!slmap_keyIter.is_incomplete() && tmp_keyIter == slmap_keyIter);
+    std::cout << "completed lower_bound iterator: " << std::endl;
+    for (;slmap_keyIter != slmap.end();++slmap_keyIter) {
+        std::cout << slmap_keyIter.key() << ": " << slmap_keyIter.data() << std::endl;
+    }
 
     slmap_keyIter = slmap.find(200);
     assert(slmap_keyIter == slmap.end());
@@ -73,7 +99,7 @@ int main() {
 
     // lower bound iterator test
     std::cout << "lower_bound iterator: " << std::endl;
-    for (slmap_keyIter = slmap.lower_bound(10);slmap_keyIter != slmap.end();++slmap_keyIter) {
+    for (slmap_keyIter = slmap.lower_bound(14);slmap_keyIter != slmap.end();++slmap_keyIter) {
         std::cout << slmap_keyIter.key() << ": " << slmap_keyIter.data() << std::endl;
     }
 
@@ -95,6 +121,7 @@ int main() {
     for (slmap_keyIter = slmap.begin();slmap_keyIter != slmap.end();++slmap_keyIter) {
         std::cout << slmap_keyIter.key() << ": " << slmap_keyIter.data() << std::endl;
     }
+    std::cout << std::endl;
     /*
     std::cout << std::endl;
     for (slmap_keyIter = --slmap.end();;--slmap_keyIter) {
@@ -105,12 +132,12 @@ int main() {
     }
     */
 
-    /*
     std::cout << "reverse iterator: " << std::endl;
     for (slmap_rev_keyIter = slmap.rbegin();slmap_rev_keyIter != slmap.rend();++slmap_rev_keyIter) {
         std::cout << slmap_rev_keyIter.key() << ": " << slmap_rev_keyIter.data() << std::endl;
     }
 
+    /*
     std::cout << std::endl;
     bool onemore = false;
     for (slmap_rev_keyIter = ++slmap.begin();;--slmap_rev_keyIter) {
@@ -144,6 +171,11 @@ int main() {
     for (slmap_keyIter = slmap.begin();slmap_keyIter != slmap.end();++slmap_keyIter) {
         std::cout << slmap_keyIter.key() << ": " << slmap_keyIter.data() << std::endl;
     }
+    std::cout << std::endl;
+    std::cout << "finally: reverse iterator: " << std::endl;
+    for (slmap_rev_keyIter = slmap.rbegin();slmap_rev_keyIter != slmap.rend();++slmap_rev_keyIter) {
+        std::cout << slmap_rev_keyIter.key() << ": " << slmap_rev_keyIter.data() << std::endl;
+    }
 
     // TODO merge test
     slmap.merge_dtos();
@@ -151,6 +183,11 @@ int main() {
     std::cout << "after merge: iterator: " << std::endl;
     for (slmap_keyIter = slmap.begin();slmap_keyIter != slmap.end();++slmap_keyIter) {
         std::cout << slmap_keyIter.key() << ": " << slmap_keyIter.data() << std::endl;
+    }
+    std::cout << std::endl;
+    std::cout << "after merge: reverse iterator: " << std::endl;
+    for (slmap_rev_keyIter = slmap.rbegin();slmap_rev_keyIter != slmap.rend();++slmap_rev_keyIter) {
+        std::cout << slmap_rev_keyIter.key() << ": " << slmap_rev_keyIter.data() << std::endl;
     }
 
     slmap.print(std::cout);

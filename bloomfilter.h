@@ -96,7 +96,7 @@ public:
         memset(array, 0, bytes);
     }
 
-    size_t size()
+    size_t size() const
     {
         return bits / 8;
     }

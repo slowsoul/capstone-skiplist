@@ -235,6 +235,20 @@ public:
         {
             return (x.currnode != currnode || x.currindex != currindex);
         }
+
+        inline bool is_invalid() const
+        {
+            return currnode == NULL;
+        }
+
+        inline bool is_end() const
+        {
+            short end_index = currnode->count;
+            if (currnode->right == NULL) {
+                --end_index;
+            }
+            return (currindex == end_index);
+        }
     };
 
     class const_iterator {
@@ -379,6 +393,20 @@ public:
         inline bool operator != (const const_iterator &x) const
         {
             return (x.currnode != currnode || x.currindex != currindex);
+        }
+
+        inline bool is_invalid() const
+        {
+            return currnode == NULL;
+        }
+
+        inline bool is_end() const
+        {
+            short end_index = currnode->count;
+            if (currnode->right == NULL) {
+                --end_index;
+            }
+            return (currindex == end_index);
         }
     };
 
@@ -528,6 +556,16 @@ public:
         inline bool operator != (const reverse_iterator &x) const
         {
             return (x.currnode != currnode || x.currindex != currindex);
+        }
+
+        inline bool is_invalid() const
+        {
+            return currnode == NULL;
+        }
+
+        inline bool is_end() const
+        {
+            return (currindex == 0 && currnode->left == NULL);
         }
     };
 
@@ -681,6 +719,16 @@ public:
         inline bool operator != (const const_reverse_iterator &x) const
         {
             return (x.currnode != currnode || x.currindex != currindex);
+        }
+
+        inline bool is_invalid() const
+        {
+            return currnode == NULL;
+        }
+
+        inline bool is_end() const
+        {
+            return (currindex == 0 && currnode->left == NULL);
         }
     };
 
