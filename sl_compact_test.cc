@@ -66,7 +66,7 @@ int main() {
     assert(slmap_keyIter != slmap.end());
     assert(slmap_keyIter.is_incomplete());
     tmp_keyIter = slmap.lower_bound(4);
-    slmap.make_found_iter_complete(slmap_keyIter);
+    slmap.make_iter_complete(slmap_keyIter);
     assert(!slmap_keyIter.is_incomplete() && tmp_keyIter == slmap_keyIter);
     std::cout << "completed lower_bound iterator: " << std::endl;
     for (;slmap_keyIter != slmap.end();++slmap_keyIter) {
@@ -77,7 +77,7 @@ int main() {
     assert(slmap_keyIter != slmap.end());
     assert(slmap_keyIter.is_incomplete());
     tmp_keyIter = slmap.lower_bound(14);
-    slmap.make_found_iter_complete(slmap_keyIter);
+    slmap.make_iter_complete(slmap_keyIter);
     assert(!slmap_keyIter.is_incomplete() && tmp_keyIter == slmap_keyIter);
     std::cout << "completed lower_bound iterator: " << std::endl;
     for (;slmap_keyIter != slmap.end();++slmap_keyIter) {

@@ -701,22 +701,20 @@ public:
     inline iterator begin()
     {
         typename sl_type::iterator dbegin = dyna_sl->begin();
-        typename sl_type::iterator dend = dyna_sl->end();
         typename sl_type::iterator sbegin = static_sl->begin();
-        typename sl_type::iterator send = static_sl->end();
-        if (sbegin == send || dbegin == dend) {
-            if (sbegin != send) {
-                while (sbegin != send && sbegin.data() == (data_type)0) {
+        if (sbegin.is_end() || dbegin.is_end()) {
+            if (!sbegin.is_end()) {
+                while (!sbegin.is_end() && sbegin.data() == (data_type)0) {
                     ++sbegin;
                 }
             }
-            return iterator(sbegin == send, dbegin, sbegin, m_key_less);
+            return iterator(sbegin.is_end(), dbegin, sbegin, m_key_less);
         }
-        while (sbegin != send && sbegin.data() == (data_type)0) {
+        while (!sbegin.is_end() && sbegin.data() == (data_type)0) {
             ++sbegin;
         }
         bool in_dyna =
-            sbegin == send ||
+            sbegin.is_end() ||
             key_greaterequal(sbegin.key(), dbegin.key());
         return iterator(in_dyna, dbegin, sbegin, m_key_less);
     }
@@ -739,22 +737,20 @@ public:
     inline reverse_iterator rbegin()
     {
         typename sl_type::reverse_iterator dbegin = dyna_sl->rbegin();
-        typename sl_type::reverse_iterator dend = dyna_sl->rend();
         typename sl_type::reverse_iterator sbegin = static_sl->rbegin();
-        typename sl_type::reverse_iterator send = static_sl->rend();
-        if (sbegin == send || dbegin == dend) {
-            if (sbegin != send) {
-                while (sbegin != send && sbegin.data() == (data_type)0) {
+        if (sbegin.is_end() || dbegin.is_end()) {
+            if (!sbegin.is_end()) {
+                while (!sbegin.is_end() && sbegin.data() == (data_type)0) {
                     ++sbegin;
                 }
             }
-            return reverse_iterator(sbegin == send, dbegin, sbegin, m_key_less);
+            return reverse_iterator(sbegin.is_end(), dbegin, sbegin, m_key_less);
         }
-        while (sbegin != send && sbegin.data() == (data_type)0) {
+        while (!sbegin.is_end() && sbegin.data() == (data_type)0) {
             ++sbegin;
         }
         bool in_dyna =
-            sbegin == send ||
+            sbegin.is_end() ||
             key_lessequal(sbegin.key(), dbegin.key());
         return reverse_iterator(in_dyna, dbegin, sbegin, m_key_less);
     }
@@ -854,7 +850,7 @@ public:
                 SL_PRINT("shortcut by bloomfilter");
                 // TODO actually not a valid iterator, cannot increment/decrement correctly
                 it = static_sl->find(key);
-                if (it != static_sl->end() && it.data() != (data_type)0) {
+                if (!it.is_end() && it.data() != (data_type)0) {
                     // NOTE should be
                     // return iterator(false, dyna_sl->upper_bound(key), it, m_key_less);
                     return iterator(false, typename sl_type::iterator(), it, m_key_less);
@@ -864,9 +860,9 @@ public:
         }
 
         it = dyna_sl->find(key);
-        if (it == dyna_sl->end()) {
+        if (it.is_end()) {
             it = static_sl->find(key);
-            if (it != static_sl->end() && it.data() != (data_type)0) {
+            if (!it.is_end() && it.data() != (data_type)0) {
                 return iterator(false, typename sl_type::iterator(), it, m_key_less);
             }
             return end();
@@ -885,7 +881,7 @@ public:
                 SL_PRINT("shortcut by bloomfilter");
                 // TODO actually not a valid iterator, cannot increment/decrement correctly
                 it = static_sl->find(key);
-                if (it != static_sl->end() && it.data() != (data_type)0) {
+                if (!it.is_end() && it.data() != (data_type)0) {
                     // NOTE should be
                     // return const_iterator(false, dyna_sl->upper_bound(key), it, m_key_less);
                     return const_iterator(false, typename sl_type::const_iterator(), it, m_key_less);
@@ -895,9 +891,9 @@ public:
         }
 
         it = dyna_sl->find(key);
-        if (it == dyna_sl->end()) {
+        if (it.is_end()) {
             it = static_sl->find(key);
-            if (it != static_sl->end() && it.data() != (data_type)0) {
+            if (!it.is_end() && it.data() != (data_type)0) {
                 return const_iterator(false, typename sl_type::const_iterator(), it, m_key_less);
             }
             return end();
@@ -907,7 +903,7 @@ public:
         // return const_iterator(true, it, static_sl->upper_bound(key), m_key_less);
     }
 
-    void make_found_iter_complete(iterator& it)
+    void make_iter_complete(iterator& it)
     {
         if (it.in_dyna) {
             key_type key = it.d_iter.key();
@@ -923,7 +919,7 @@ public:
         }
     }
 
-    void make_found_iter_complete(const_iterator& it) const
+    void make_iter_complete(const_iterator& it) const
     {
         if (it.in_dyna) {
             key_type key = it.d_iter.key();
@@ -1148,9 +1144,9 @@ public:
         }
 
         typename sl_type::iterator static_iter = static_sl->find(key);
-        if (static_iter != static_sl->end()) {
+        if (!static_iter.is_end()) {
             // NOTE result iterator is not valid
-            return std::pair<iterator, bool>(iterator(false, dyna_sl->end(), static_iter, m_key_less), false);
+            return std::pair<iterator, bool>(iterator(false, typename sl_type::iterator(), static_iter, m_key_less), false);
         }
 
         return insert_common(key, data);
@@ -1166,8 +1162,8 @@ private:
     inline std::pair<iterator, bool> insert_common(const key_type& key, const data_type& data)
     {
         std::pair<typename sl_type::iterator, bool> dyna_retval = dyna_sl->insert_common(key, data);
-        // NOTE result iterator is not valid, static_sl->end() should be static_sl->upper_bound(key)
-        std::pair<iterator, bool> retval = std::pair<iterator, bool>(iterator(true, dyna_retval.first, static_sl->end(), m_key_less), dyna_retval.second);
+        // NOTE result iterator is not complete
+        std::pair<iterator, bool> retval = std::pair<iterator, bool>(iterator(true, dyna_retval.first, typename sl_type::iterator(), m_key_less), dyna_retval.second);
 
         if (USE_BLOOM_FILTER) {
             bf.insert(reinterpret_cast<const char*>(&key), sizeof(key_type));
@@ -1179,7 +1175,7 @@ private:
     bool static_lazy_erase_one(const key_type& key)
     {
         typename sl_type::iterator it = static_sl->find(key);
-        if (it != static_sl->end() && it.data() != (data_type)0) {
+        if (!it.is_end() && it.data() != (data_type)0) {
             it.data() = (data_type)0;
             SL_PRINT("static: lazy erased " << key);
             return true;
