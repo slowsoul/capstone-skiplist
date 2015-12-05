@@ -53,7 +53,7 @@ class skiplist_multimap;
 template <typename _Key, typename _Data,
           typename _Compare = std::less<_Key>,
           typename _Traits = skiplist_default_map_traits<_Key, _Data>,
-          typename _Alloc = std::allocator<std::pair<_Key, _Data>>>
+          typename _Alloc = std::allocator<std::pair<_Key, _Data> > >
 class skiplist_multimap_ro
 {
 #define SL_FRIENDS friend class skiplist_multimap_compact<_Key, _Data, _Compare, _Traits, _Alloc>;

@@ -25,7 +25,7 @@ namespace cmu {
 template <typename _Key, typename _Data,
           typename _Compare = std::less<_Key>,
           typename _Traits = skiplist_default_map_traits<_Key, _Data>,
-          typename _Alloc = std::allocator<std::pair<_Key, _Data>>>
+          typename _Alloc = std::allocator<std::pair<_Key, _Data> > >
 class skiplist_map_compact
 {
 public:
@@ -109,6 +109,10 @@ public:
 
         inline iterator()
             : in_dyna(true)
+        { }
+
+        inline iterator(const key_compare& kcf)
+            : in_dyna(true), key_less(kcf)
         { }
 
         inline reference operator * () const
@@ -237,6 +241,10 @@ public:
 
         inline const_iterator()
             : in_dyna(true)
+        { }
+
+        inline const_iterator(const key_compare& kcf)
+            : in_dyna(true), key_less(kcf)
         { }
 
         inline const_iterator(const iterator& it)
@@ -372,6 +380,10 @@ public:
             : in_dyna(true)
         { }
 
+        inline reverse_iterator(const key_compare& kcf)
+            : in_dyna(true), key_less(kcf)
+        { }
+
         inline reference operator * () const
         {
             temp_value = in_dyna ? value_type(d_iter.key(), d_iter.data())
@@ -498,6 +510,10 @@ public:
 
         inline const_reverse_iterator()
             : in_dyna(true)
+        { }
+
+        inline const_reverse_iterator(const key_compare& kcf)
+            : in_dyna(true), key_less(kcf)
         { }
 
         inline const_reverse_iterator(const reverse_iterator& it)
