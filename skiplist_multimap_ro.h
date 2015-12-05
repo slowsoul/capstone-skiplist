@@ -293,6 +293,26 @@ public:
         {
             return (x.currnode != currnode || x.currindex != currindex || x.currdataindex != currdataindex);
         }
+
+        inline bool is_invalid() const
+        {
+            return currnode == NULL;
+        }
+
+        inline bool is_end() const
+        {
+            return currdataindex == currnode->data_count[currindex];
+        }
+
+        inline bool is_lazy_deleted() const
+        {
+            return data() == (data_type)0;
+        }
+
+        inline void lazy_delete()
+        {
+            data() = (data_type)0;
+        }
     };
 
     class const_iterator {
@@ -478,6 +498,21 @@ public:
         inline bool operator != (const const_iterator &x) const
         {
             return (x.currnode != currnode || x.currindex != currindex || x.currdataindex != currdataindex);
+        }
+
+        inline bool is_invalid() const
+        {
+            return currnode == NULL;
+        }
+
+        inline bool is_end() const
+        {
+            return currdataindex == currnode->data_count[currindex];
+        }
+
+        inline bool is_lazy_deleted() const
+        {
+            return data() == (data_type)0;
         }
     };
 
@@ -670,6 +705,26 @@ public:
         inline bool operator != (const reverse_iterator &x) const
         {
             return (x.currnode != currnode || x.currindex != currindex || x.currdataindex != currdataindex);
+        }
+
+        inline bool is_invalid() const
+        {
+            return currnode == NULL;
+        }
+
+        inline bool is_end() const
+        {
+            return currdataindex == 0;
+        }
+
+        inline bool is_lazy_deleted() const
+        {
+            return data() == (data_type)0;
+        }
+
+        inline void lazy_delete()
+        {
+            data() = (data_type)0;
         }
     };
 
@@ -866,6 +921,21 @@ public:
         inline bool operator != (const const_reverse_iterator &x) const
         {
             return (x.currnode != currnode || x.currindex != currindex || x.currdataindex != currdataindex);
+        }
+
+        inline bool is_invalid() const
+        {
+            return currnode == NULL;
+        }
+
+        inline bool is_end() const
+        {
+            return currdataindex == 0;
+        }
+
+        inline bool is_lazy_deleted() const
+        {
+            return data() == (data_type)0;
         }
     };
 

@@ -249,6 +249,16 @@ public:
             }
             return (currindex == end_index);
         }
+
+        inline bool is_lazy_deleted() const
+        {
+            return data() == (data_type)0;
+        }
+
+        inline void lazy_delete()
+        {
+            data() = (data_type)0;
+        }
     };
 
     class const_iterator {
@@ -408,6 +418,11 @@ public:
             }
             return (currindex == end_index);
         }
+
+        inline bool is_lazy_deleted() const
+        {
+            return data() == (data_type)0;
+        }
     };
 
     class reverse_iterator {
@@ -565,7 +580,17 @@ public:
 
         inline bool is_end() const
         {
-            return (currindex == 0 && currnode->left == NULL);
+            return currindex == 0;
+        }
+
+        inline bool is_lazy_deleted() const
+        {
+            return data() == (data_type)0;
+        }
+
+        inline void lazy_delete()
+        {
+            data() = (data_type)0;
         }
     };
 
@@ -728,7 +753,12 @@ public:
 
         inline bool is_end() const
         {
-            return (currindex == 0 && currnode->left == NULL);
+            return currindex == 0;
+        }
+
+        inline bool is_lazy_deleted() const
+        {
+            return data() == (data_type)0;
         }
     };
 
@@ -757,8 +787,8 @@ private:
 
 public:
     explicit inline skiplist_map(const allocator_type& alloc = allocator_type())
+        : m_allocator(alloc)
     {
-        m_allocator = alloc;
         m_inner_allocator = m_allocator;
         m_leaf_allocator = m_allocator;
         m_size = m_level = 0;
@@ -773,9 +803,8 @@ public:
 
     explicit inline skiplist_map(const key_compare& kcf,
                                  const allocator_type& alloc = allocator_type())
+        : m_key_less(kcf), m_allocator(alloc)
     {
-        m_key_less = kcf;
-        m_allocator = alloc;
         m_inner_allocator = m_allocator;
         m_leaf_allocator = m_allocator;
         m_size = m_level = 0;
