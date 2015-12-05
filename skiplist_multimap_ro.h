@@ -966,8 +966,8 @@ private:
 
 public:
     explicit inline skiplist_multimap_ro(const allocator_type& alloc = allocator_type())
+        : m_allocator(alloc)
     {
-        m_allocator = alloc;
         m_inner_allocator = m_allocator;
         m_leaf_allocator = m_allocator;
         m_data_allocator = m_allocator;
@@ -984,9 +984,8 @@ public:
 
     explicit inline skiplist_multimap_ro(const key_compare& kcf,
                                  const allocator_type& alloc = allocator_type())
+        : m_key_less(kcf), m_allocator(alloc)
     {
-        m_key_less = kcf;
-        m_allocator = alloc;
         m_inner_allocator = m_allocator;
         m_leaf_allocator = m_allocator;
         m_data_allocator = m_allocator;

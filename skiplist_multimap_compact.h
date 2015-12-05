@@ -569,9 +569,8 @@ private:
 
 public:
     explicit inline skiplist_multimap_compact(const allocator_type& alloc = allocator_type())
-        : bf(LITTLEENDIAN, K, BITS_PER_KEY)
+        : bf(LITTLEENDIAN, K, BITS_PER_KEY), m_allocator(alloc)
     {
-        m_allocator = alloc;
         dyna_sl = new sl_type(alloc);
         static_sl = new sl_ro_type(alloc);
 
@@ -582,10 +581,8 @@ public:
 
     explicit inline skiplist_multimap_compact(const key_compare& kcf,
                                  const allocator_type& alloc = allocator_type())
-        : bf(LITTLEENDIAN, K, BITS_PER_KEY)
+        : bf(LITTLEENDIAN, K, BITS_PER_KEY), m_key_less(kcf), m_allocator(alloc)
     {
-        m_key_less = kcf;
-        m_allocator = alloc;
         dyna_sl = new sl_type(kcf, alloc);
         static_sl = new sl_ro_type(kcf, alloc);
 
