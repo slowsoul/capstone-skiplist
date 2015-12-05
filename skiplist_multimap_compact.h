@@ -888,6 +888,30 @@ public:
         return const_iterator(true, d_it, typename sl_ro_type::iterator(), m_key_less);
     }
 
+    void make_iter_complete(iterator& it)
+    {
+        if (it.in_dyna) {
+            key_type key = it.d_iter.key();
+            it.s_iter = static_sl->lower_bound(key);
+        }
+        else {
+            key_type key = it.s_iter.key();
+            it.d_iter = dyna_sl->upper_bound(key);
+        }
+    }
+
+    void make_iter_complete(const_iterator& it) const
+    {
+        if (it.in_dyna) {
+            key_type key = it.d_iter.key();
+            it.s_iter = static_sl->lower_bound(key);
+        }
+        else {
+            key_type key = it.s_iter.key();
+            it.d_iter = dyna_sl->upper_bound(key);
+        }
+    }
+
     size_type count(const key_type& key) const
     {
         return dyna_sl->count(key) + static_sl->count(key);
