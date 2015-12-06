@@ -1890,16 +1890,18 @@ public:
 
     void erase(iterator iter)
     {
-        if (is_valid_iterator(iter)) {
-            // TODO need a erase_iter method
+        if (!is_valid_iterator(iter)) {
+            return;
         }
+        // TODO need a erase_iter method
     }
 
     void erase(reverse_iterator iter)
     {
-        if (is_valid_reverse_iterator(iter)) {
-            // TODO need a erase_iter method
+        if (!is_valid_reverse_iterator(iter)) {
+            return;
         }
+        // TODO need a erase_iter method
     }
 
 #ifdef SL_DEBUG
