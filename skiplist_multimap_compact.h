@@ -448,7 +448,7 @@ public:
     private:
         bool in_dyna;
         typename sl_type::const_reverse_iterator d_iter;
-        typename sl_type::const_reverse_iterator s_iter;
+        typename sl_ro_type::const_reverse_iterator s_iter;
         key_compare key_less;
 
         friend class skiplist_multimap_compact<key_type, data_type, key_compare, traits,
@@ -741,7 +741,7 @@ public:
 
     inline reverse_iterator rend()
     {
-        return iterator(true, dyna_sl->rend(), static_sl->rend(), m_key_less);
+        return reverse_iterator(true, dyna_sl->rend(), static_sl->rend(), m_key_less);
     }
 
     inline const_reverse_iterator rbegin() const
