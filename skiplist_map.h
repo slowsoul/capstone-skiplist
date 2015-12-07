@@ -1679,8 +1679,8 @@ private:
             }
         }
 
-        right->count = rc - move;
-        left->count = lc + move;
+        right->count = rc + move;
+        left->count = lc - move;
     }
 
     std::pair<iterator, bool> insert_common(const key_type& key, const data_type& data)
